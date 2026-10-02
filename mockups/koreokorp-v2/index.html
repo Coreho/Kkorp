@@ -407,7 +407,7 @@ h2 {
       <h2>KoreoKorp</h2>
       <div class="rest stack">
         <p class="blurb">A small corner of the internet. Posts, projects, and a chat room you can walk into with nothing but a screen name.</p>
-        <p class="try">Click · hold</p>
+        <p class="try">Click to shuffle</p>
         <p class="now" data-now aria-live="polite"></p>
       </div>
       <div class="detail about">
@@ -883,11 +883,10 @@ h2 {
     };
   }
 
-  // 1 · One set of pixels for the whole site. The same 2,400 pixels form the KoreoKorp wordmark on the home
-  // screen, fly across panel borders to form each opened panel's word, march around the chat window, and carry
-  // every chat message into the room. Nothing is created or destroyed; the pixels only rearrange.
+  // 1 · Sliding tiles. One shared set of solid letter tiles shows where you are: the KoreoKorp wordmark at home,
+  // BLOG / WORK in those panels, a tile frame around the chat window. Changing place breaks the word into tiles
+  // that lift, slide and spin across the screen, then lock into the next word like a sliding-tile puzzle.
   const swarm = (() => {
-    const N = 2400;
     const mainEl = document.getElementById('panels');
     const p1 = mainEl.querySelector('.p1');
     const cv = document.createElement('canvas');
@@ -901,79 +900,16 @@ h2 {
       VW = innerWidth; VH = innerHeight;
       cv.width = VW * dpr; cv.height = VH * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      lqFit();
-    }
-
-    // ---- liquid rendering ----
-    // Every pixel is drawn as a soft blob of light on a low-resolution buffer. Where blobs overlap their
-    // density adds up; thresholding that density turns them into one solid surface, so resting letters read
-    // as solid liquid type and moving pixels stretch into streams and droplets. A light from the top-left
-    // gives the surface a glossy bevel.
-    const LQ = { scale: 2, w: 0, h: 0, src: null, sx: null, out: null, ox: null, img: null, sprites: new Map() };
-    function lqFit() {
-      LQ.scale = VW * VH > 1.6e6 ? 3 : 2;
-      LQ.w = Math.ceil(VW / LQ.scale); LQ.h = Math.ceil(VH / LQ.scale);
-      LQ.src = document.createElement('canvas'); LQ.src.width = LQ.w; LQ.src.height = LQ.h;
-      LQ.sx = LQ.src.getContext('2d', { willReadFrequently: true });
-      LQ.out = document.createElement('canvas'); LQ.out.width = LQ.w; LQ.out.height = LQ.h;
-      LQ.ox = LQ.out.getContext('2d');
-      LQ.img = LQ.ox.createImageData(LQ.w, LQ.h);
-    }
-    function sprite(r) {
-      const key = r.toFixed(2);
-      let c = LQ.sprites.get(key);
-      if (c) return c;
-      const d = Math.ceil(r * 2) + 2;
-      c = document.createElement('canvas'); c.width = c.height = d;
-      const g = c.getContext('2d'), gr = g.createRadialGradient(d / 2, d / 2, 0, d / 2, d / 2, r);
-      gr.addColorStop(0, 'rgba(255, 255, 255, .42)'); gr.addColorStop(.5, 'rgba(255, 255, 255, .24)'); gr.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      g.fillStyle = gr; g.fillRect(0, 0, d, d);
-      LQ.sprites.set(key, c);
-      return c;
-    }
-    // Draws one liquid body: the pixels in `arr` fused into a single solid surface of colour `rgb`.
-    function liquid(arr, rFull, rgb, shadow) {
-      if (!arr.length) return;
-      const { w, h, sx, scale } = LQ, spr = sprite(Math.max(1.6, rFull / scale)), o = spr.width / 2;
-      sx.globalCompositeOperation = 'source-over';
-      sx.clearRect(0, 0, w, h);
-      sx.globalCompositeOperation = 'lighter';
-      for (const p of arr) sx.drawImage(spr, p.x / scale - o, p.y / scale - o);
-      const src = sx.getImageData(0, 0, w, h).data, dst = LQ.img.data, row = w * 4;
-      const [R, G, B] = rgb;
-      for (let y = 1; y < h - 1; y++) {
-        for (let x = 1; x < w - 1; x++) {
-          const i = y * row + x * 4, a = src[i + 3];
-          if (a < 54) { dst[i + 3] = 0; continue; }
-          const edge = a >= 80 ? 1 : (a - 54) / 26;
-          // shade only near the edge: clamp density so solid interiors stay flat
-          const g = Math.min(110, src[i - row - 4 + 3]) - Math.min(110, src[i + row + 4 + 3]);
-          const hl = g > 0 ? Math.min(1, g / 55) * .7 : 0, sh = g < 0 ? Math.min(.35, -g / 180) : 0;
-          dst[i] = R * (1 - sh) + (255 - R) * hl;
-          dst[i + 1] = G * (1 - sh) + (255 - G) * hl;
-          dst[i + 2] = B * (1 - sh) + (255 - B) * hl;
-          dst[i + 3] = 255 * edge;
-        }
-      }
-      LQ.ox.putImageData(LQ.img, 0, 0);
-      ctx.save();
-      ctx.imageSmoothingEnabled = true;
-      if (shadow) { ctx.shadowColor = 'rgba(11, 18, 32, .2)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 5; }
-      ctx.drawImage(LQ.out, 0, 0, w * scale, h * scale);
-      ctx.restore();
     }
     fit();
     addEventListener('resize', fit);
-
-    const ps = [];
-    for (let i = 0; i < N; i++) ps.push({ x: Math.random() * VW, y: Math.random() * VH, vx: 0, vy: 0, k: i, go: 0, hx: 0, hy: 0, lx: VW / 2, ly: VH / 2, pk: null });
 
     const S = {
       word: 'KOREO\nKORP', wi: 0, holdUntil: 0, partyUntil: 0, speaker: 'Y2Kpixie', online: 5,
       lastInteract: 0, pendingMorph: 0, pendingSame: false,
       // Idle rotation on the home wordmark. Live entries read the chat room.
       cycle: [
-        () => ['KOREO\nKORP', 'Click it. It builds itself back.'],
+        () => ['KOREO\nKORP', 'Click it to shuffle the tiles.'],
         () => [this_.speaker.toUpperCase(), `<b>${esc(this_.speaker)}</b> spoke last in The Lobby`],
         () => [`${this_.online}\nONLINE`, 'People in The Lobby right now'],
         () => ['SAY\nHI', 'The chat room is always open'],
@@ -989,22 +925,27 @@ h2 {
       morph() { this.wi = (this.wi + 1) % this.cycle.length; const [w, c] = this.cycle[this.wi](); this.setWord(w, c); },
     };
 
-    // ---- formations: where the pixels should be right now ----
+    const INKC = '#241f5c', TAU = Math.PI * 2;
+    const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+
+    // ---- formations: where the tiles should be right now ----
     function pick() {
       const open = mainEl.querySelector('.panel.open');
       const name = open ? open.dataset.panel : 'home';
-      if (name === 'chat') return { key: 'chat', kind: 'frame', el: document.querySelector('.aim'), rest: '#cfd3ff' };
-      if (name === 'blog') return { key: 'blog', kind: 'word', el: open, box: [.54, .09, .93, .29], word: 'BLOG', rest: '#241f5c' };
-      if (name === 'projects') return { key: 'work', kind: 'word', el: open, box: [.6, .63, .95, .86], word: 'WORK', rest: '#241f5c' };
+      if (name === 'chat') return { key: 'chat', kind: 'frame', el: document.querySelector('.aim') };
+      if (name === 'blog') return { key: 'blog', kind: 'word', el: open, box: [.54, .09, .93, .29], word: 'BLOG' };
+      if (name === 'projects') return { key: 'work', kind: 'word', el: open, box: [.6, .63, .95, .86], word: 'WORK' };
       const box = name === 'about' ? [.46, .46, .95, .84] : [.07, .46, .93, .84];
-      return { key: name + ':' + S.word, kind: 'word', el: p1, box, word: S.word, rest: '#241f5c', home: true };
+      return { key: name + ':' + S.word, kind: 'word', el: p1, box, word: S.word, home: true };
     }
     function region(f) {
       const r = f.el.getBoundingClientRect();
       if (f.kind === 'frame') return r;
       return { left: r.left + r.width * f.box[0], top: r.top + r.height * f.box[1], width: r.width * (f.box[2] - f.box[0]), height: r.height * (f.box[3] - f.box[1]) };
     }
-    function sampleWord(f, R) {
+
+    // ---- cut the formation into tiles ----
+    function sliceWord(f, R) {
       const rw = Math.max(40, Math.round(R.width)), rh = Math.max(30, Math.round(R.height));
       const lines = f.word.split('\n');
       const off = document.createElement('canvas'); off.width = rw; off.height = rh;
@@ -1014,52 +955,106 @@ h2 {
       c.font = face(fs);
       const widest = Math.max(...lines.map(l => c.measureText(l).width));
       fs = Math.min(fs, fs * rw / widest);
-      c.font = face(fs); c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#000';
-      c.strokeStyle = '#000'; c.lineWidth = fs * .07; c.lineJoin = 'round';
+      c.font = face(fs); c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillStyle = INKC; c.strokeStyle = INKC; c.lineWidth = fs * .05; c.lineJoin = 'round';
       lines.forEach((l, i) => { const ly = rh / 2 + (i - (lines.length - 1) / 2) * fs * .9; c.fillText(l, rw / 2, ly); c.strokeText(l, rw / 2, ly); });
       const img = c.getImageData(0, 0, rw, rh).data;
-      // widen the sampling grid until every point can get at least one pixel, so letters stay solid
-      let gap = Math.max(4, Math.round(fs / 20)), pts;
+      let size = Math.max(9, Math.min(30, Math.round(fs / 6)));
+      let out;
       do {
-        pts = [];
-        for (let y = 0; y < rh; y += gap) for (let x = 0; x < rw; x += gap) if (img[(y * rw + x) * 4 + 3] > 128) pts.push(x / rw, y / rh);
-      } while (pts.length / 2 > N * .5 && ++gap < 40);
-      f.pts = pts.length ? pts : [.5, .5];
-      f.n = f.pts.length / 2; f.sw = rw; f.sh = rh; f.gap = gap;
+        out = [];
+        for (let gy = 0; gy < rh; gy += size) for (let gx = 0; gx < rw; gx += size) {
+          let ink = 0;
+          for (let y = gy; y < Math.min(rh, gy + size); y += 2) for (let x = gx; x < Math.min(rw, gx + size); x += 2) if (img[(y * rw + x) * 4 + 3] > 90) ink++;
+          if (ink < 2) continue;
+          const tc = document.createElement('canvas'); tc.width = tc.height = size;
+          tc.getContext('2d').drawImage(off, gx, gy, size, size, 0, 0, size, size);
+          out.push({ u: (gx + size / 2) / rw, v: (gy + size / 2) / rh, su: size / rw, img: tc });
+        }
+      } while (out.length > 520 && ++size < 60);
+      f.sw = rw; f.sh = rh;
+      return out;
     }
-    function assign(f, t) {
-      const n = f.kind === 'frame' ? N : f.n;
-      const order = [...Array(n).keys()];
-      for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
-      ps.forEach((p, i) => { p.hx = p.lx; p.hy = p.ly; p.go = t + Math.random() * 520; p.k = f.kind === 'frame' ? i : order[i % n]; });
+    const frameTile = (() => {
+      const make = (fill, hi) => {
+        const t = document.createElement('canvas'); t.width = t.height = 16;
+        const g = t.getContext('2d');
+        g.fillStyle = fill; g.fillRect(0, 0, 16, 16);
+        g.fillStyle = hi; g.fillRect(0, 0, 16, 2); g.fillRect(0, 0, 2, 16);
+        g.fillStyle = 'rgba(0, 0, 0, .25)'; g.fillRect(0, 14, 16, 2); g.fillRect(14, 0, 2, 16);
+        return t;
+      };
+      return [make('#ff3fbf', '#ff9be0'), make('#14c99a', '#8ff0d6')];
+    })();
+    function sliceFrame(f, R) {
+      const per = 2 * (R.width + R.height + 56), n = Math.max(40, Math.floor(per / 19));
+      return [...Array(n).keys()].map(i => ({ s: i / n, img: frameTile[i % 9 === 0 ? 1 : 0], frame: true }));
     }
     function perimeter(r, e, s) {
-      const x0 = Math.max(3, r.left - e), y0 = Math.max(3, r.top - e), x1 = Math.min(VW - 3, r.right + e), y1 = Math.min(VH - 3, r.bottom + e);
-      const w = x1 - x0, h = y1 - y0, d = s * 2 * (w + h);
+      const x0 = Math.max(10, r.left - e), y0 = Math.max(10, r.top - e), x1 = Math.min(VW - 10, r.right + e), y1 = Math.min(VH - 10, r.bottom + e);
+      const w = x1 - x0, h = y1 - y0, d = (((s % 1) + 1) % 1) * 2 * (w + h);
       if (d < w) return [x0 + d, y0];
       if (d < w + h) return [x1, y0 + d - w];
       if (d < 2 * w + h) return [x1 - (d - w - h), y1];
       return [x0, y1 - (d - 2 * w - h)];
     }
+    function pos(sl, R, t) {
+      if (sl.abs) return sl.abs;
+      if (sl.frame) { const [x, y] = perimeter(R, 16, sl.s + t * .000018); return { x, y, size: 15 }; }
+      return { x: R.left + sl.u * R.width, y: R.top + sl.v * R.height, size: sl.su * R.width };
+    }
 
-    // ---- pointer: click blasts the home wordmark, holding swirls it. No hover effect. ----
-    let holding = false, hx = 0, hy = 0, downX = 0, downY = 0;
-    const interactive = e => e.target.closest('button, input, textarea, a, label, form, .aim');
-    p1.addEventListener('pointerdown', e => { if (interactive(e)) return; holding = true; hx = downX = e.clientX; hy = downY = e.clientY; S.lastInteract = performance.now(); });
-    document.addEventListener('pointermove', e => { if (holding) { hx = e.clientX; hy = e.clientY; } });
-    document.addEventListener('pointerup', e => {
-      if (!holding) return;
-      holding = false;
-      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 6) return;
-      const t = performance.now();
-      for (const p of ps) {
-        const dx = p.x - e.clientX, dy = p.y - e.clientY, d = Math.hypot(dx, dy) || 1;
-        if (d < 300) { const f = (1 - d / 300) * 22; p.vx += dx / d * f; p.vy += dy / d * f; }
+    // ---- tiles ----
+    let tiles = [];
+    function retarget(slices, R, t, quick) {
+      const live = tiles.filter(x => !x.dying).sort((a, b) => a.x - b.x || a.y - b.y);
+      const P = slices.map(sl => pos(sl, R, t));
+      const order = [...slices.keys()].sort((a, b) => P[a].x - P[b].x || P[a].y - P[b].y);
+      const m = Math.max(live.length, slices.length), next = [];
+      for (let i = 0; i < m; i++) {
+        let tile = live[i];
+        if (!tile) {
+          const src = live.length ? live[Math.floor(Math.random() * live.length)] : { x: Math.random() * VW, y: VH + 40, size: 14, img: null };
+          tile = { x: src.x, y: src.y, rot: 0, sc: live.length ? 0 : 1, size: src.size, img: src.img };
+        }
+        const dying = i >= slices.length;
+        const sl = dying ? { abs: P[order[Math.floor(Math.random() * slices.length)]] || { x: tile.x, y: tile.y, size: tile.size } } : slices[order[i]];
+        const to = pos(sl, R, t), dist = Math.hypot(to.x - tile.x, to.y - tile.y);
+        Object.assign(tile, {
+          slice: sl, dying, nextImg: dying ? tile.img : sl.img,
+          from: { x: tile.x, y: tile.y, rot: tile.rot, sc: tile.sc, size: tile.size },
+          spin: quick || dist < 60 ? 0 : (Math.random() < .5 ? -1 : 1) * TAU * (dist > 400 ? 2 : 1),
+          t0: t + (quick ? 0 : (i / m) * 420 + Math.random() * 90),
+          dur: quick ? 240 : Math.min(1150, 480 + dist * .35),
+          flip: false,
+        });
+        if (!tile.img) tile.img = tile.nextImg;
+        tile.flip = tile.img !== tile.nextImg && tile.spin === 0;
+        next.push(tile);
       }
-      S.pendingMorph = t + 260; S.pendingSame = t < S.holdUntil; S.lastInteract = t;
+      tiles = next.concat(tiles.filter(x => x.dying && !next.includes(x)));
+    }
+
+    // ---- click the home wordmark to shuffle it; nothing happens on hover ----
+    let downX = 0, downY = 0, down = false;
+    const interactive = e => e.target.closest('button, input, textarea, a, label, form, .aim');
+    p1.addEventListener('pointerdown', e => { if (interactive(e)) return; down = true; downX = e.clientX; downY = e.clientY; });
+    document.addEventListener('pointerup', e => {
+      if (!down) return;
+      down = false;
+      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 6 || !form || !form.home) return;
+      const t = performance.now(), R = region(form);
+      // scramble: every tile jumps to a random spot in the word's box, then the word re-solves
+      tiles.forEach(tile => {
+        if (tile.dying) return;
+        tile.from = { x: tile.x, y: tile.y, rot: tile.rot, sc: tile.sc, size: tile.size };
+        tile.slice = { abs: { x: R.left + Math.random() * R.width, y: R.top + Math.random() * R.height, size: tile.size } };
+        tile.nextImg = tile.img; tile.spin = (Math.random() < .5 ? -1 : 1) * TAU / 2; tile.t0 = t; tile.dur = 300; tile.flip = false;
+      });
+      S.pendingMorph = t + 340; S.pendingSame = t < S.holdUntil; S.lastInteract = t;
     });
 
-    // ---- every chat message is carried in by a few pixels ----
+    // ---- every chat message is carried in by a few tiles ----
     document.addEventListener('kk:chat', () => {
       const open = mainEl.querySelector('.panel.open');
       const target = !open ? document.querySelector('#preview li:last-child')
@@ -1067,82 +1062,104 @@ h2 {
       if (!target) return;
       const r = target.getBoundingClientRect();
       if (!r.width || r.bottom < 0 || r.top > VH) return;
-      const t = performance.now();
-      for (let j = 0; j < 30; j++) {
-        const p = ps[Math.floor(Math.random() * N)];
-        p.pk = { x: r.left + Math.random() * Math.min(r.width, 180), y: r.top + r.height * (.2 + Math.random() * .6), until: t + 1200 + Math.random() * 300 };
+      const t = performance.now(), pool = tiles.filter(x => !x.dying && !x.pk);
+      for (let j = 0; j < 5 && pool.length; j++) {
+        const tile = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+        tile.pk = { x: r.left + 10 + j * 22, y: r.top + r.height / 2, t0: t + j * 70 };
       }
     });
 
-    let form = null, lastSample = 0, lastT = 0;
+    let form = null, slices = [], lastSample = 0, lastR = null, stableSince = 0, wasFalling = false, lastT = 0;
     function frame(t) {
       requestAnimationFrame(frame);
-      // physics step scaled to real time so motion speed doesn't depend on frame rate
       const k = Math.min(3, Math.max(.25, (t - (lastT || t - 16.7)) / 16.7)); lastT = t;
-      const damp = Math.pow(.8, k);
       const f2 = pick();
+      if (!f2.el) return;
+      let R;
       if (!form || f2.key !== form.key) {
-        form = f2;
-        if (form.kind === 'word') sampleWord(form, region(form));
-        assign(form, t);
+        form = f2; R = region(form);
+        slices = form.kind === 'frame' ? sliceFrame(form, R) : sliceWord(form, R);
+        retarget(slices, R, t, false);
         lastSample = t;
-      } else form.el = f2.el;
-      if (!form.el) return;
-      const R = region(form);
-      if (form.kind === 'word' && t - lastSample > 200 && (Math.abs(R.width - form.sw) > form.sw * .08 || Math.abs(R.height - form.sh) > form.sh * .08)) {
-        sampleWord(form, R); lastSample = t;
-        // spread the pixels over the new sample so every part of the letters is covered
-        const order = [...Array(form.n).keys()];
-        for (let i = form.n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
-        ps.forEach((p, i) => { p.k = order[i % form.n]; });
+      } else { form.el = f2.el; R = region(form); }
+      // re-cut once the panel has finished resizing
+      if (lastR && (Math.abs(lastR.width - R.width) > 1 || Math.abs(lastR.height - R.height) > 1)) stableSince = t;
+      lastR = { width: R.width, height: R.height };
+      if (form.kind === 'word' && t - stableSince > 160 && t - lastSample > 200 && (Math.abs(R.width - form.sw) > form.sw * .06 || Math.abs(R.height - form.sh) > form.sh * .06)) {
+        slices = sliceWord(form, R); retarget(slices, R, t, true); lastSample = t;
+      }
+      if (form.kind === 'frame' && t - lastSample > 400 && Math.abs(slices.length - Math.floor(2 * (R.width + R.height + 56) / 19)) > 3) {
+        slices = sliceFrame(form, R); retarget(slices, R, t, true); lastSample = t;
       }
       if (form.home) {
-        if (S.pendingMorph && t > S.pendingMorph) { S.pendingMorph = 0; if (S.pendingSame) { sampleWord(form, R); assign(form, t - 600); } else S.morph(); }
+        if (S.pendingMorph && t > S.pendingMorph) {
+          S.pendingMorph = 0;
+          if (S.pendingSame) { slices = sliceWord(form, R); retarget(slices, R, t, false); } else S.morph();
+        }
         if (t - S.lastInteract > 9000 && t > S.holdUntil) { S.lastInteract = t; S.morph(); }
       }
+
       const party = t < S.partyUntil, falling = t < S.partyUntil - 4200;
+      if (wasFalling && !falling) retarget(slices, R, t, false);
+      wasFalling = falling;
+
       ctx.clearRect(0, 0, VW, VH);
-      const rest = [], pks = [];
-      for (let i = 0; i < N; i++) {
-        const p = ps[i];
-        let tx, ty;
-        if (p.pk && t < p.pk.until) { tx = p.pk.x; ty = p.pk.y; }
-        else {
-          p.pk = null;
-          if (form.kind === 'frame') {
-            const ring = i % 3;
-            [tx, ty] = perimeter(R, 7 + ring * 4, ((i - ring) / N + t * .000012 * (ring % 2 ? -1 : 1) + 1) % 1);
-          } else {
-            const k = p.k % form.n, dup = p.k >= form.n || i >= form.n;
-            tx = R.left + form.pts[k * 2] * R.width + (dup ? ((i * 7919) % 5 - 2) * .6 : 0);
-            ty = R.top + form.pts[k * 2 + 1] * R.height + (dup ? ((i * 104729) % 5 - 2) * .6 : 0);
-            tx += Math.sin(t * .0018 + ty * .03 + tx * .02) * .45; ty += Math.cos(t * .0015 + tx * .03 + ty * .015) * .45;
-          }
-          p.lx = tx; p.ly = ty;
-          if (t < p.go) { tx = p.hx; ty = p.hy; }
-        }
+      const keep = [];
+      for (let i = 0; i < tiles.length; i++) {
+        const tile = tiles[i];
+        let lift = 0, sx = 1;
         if (falling) {
-          p.vy += .55 * k;
-          if (p.y > VH - 70) { p.y = VH - 70; p.vy *= -.45; p.vx *= .9; }
+          if (!tile.phys) tile.phys = { vx: (Math.random() - .5) * 8, vy: -Math.random() * 8, vr: (Math.random() - .5) * .3 };
+          const ph = tile.phys;
+          ph.vy += .6 * k; tile.x += ph.vx * k; tile.y += ph.vy * k; tile.rot += ph.vr * k;
+          const floor = VH - tile.size / 2 - 8;
+          if (tile.y > floor) { tile.y = floor; ph.vy *= -.4; ph.vx *= .8; ph.vr *= .7; }
+          if (tile.x < 0 || tile.x > VW) ph.vx *= -1;
+          lift = .3;
         } else {
-          p.vx += (tx - p.x) * .032 * k; p.vy += (ty - p.y) * .032 * k;
+          tile.phys = null;
+          const to = pos(tile.slice, R, t), f = tile.from;
+          const p = Math.max(0, Math.min(1, (t - tile.t0) / tile.dur)), e = ease(p);
+          tile.x = f.x + (to.x - f.x) * e; tile.y = f.y + (to.y - f.y) * e;
+          tile.size = f.size + (to.size - f.size) * e;
+          const endRot = Math.round((f.rot + tile.spin) / TAU) * TAU;
+          tile.rot = f.rot + (endRot - f.rot) * e;
+          tile.sc = (tile.dying ? f.sc * (1 - e) : f.sc + (1 - f.sc) * e);
+          if (p > 0 && p < 1) lift = Math.sin(Math.PI * p);
+          if (p >= .5 && tile.img !== tile.nextImg) tile.img = tile.nextImg;
+          if (tile.flip && p > 0 && p < 1) sx = Math.max(.08, Math.abs(Math.cos(Math.PI * p)));
+          const land = t - (tile.t0 + tile.dur);
+          if (land > 0 && land < 200 && !tile.dying) tile.sc *= 1 + .14 * (1 - land / 200);
+          if (p >= 1) { tile.rot = 0; if (tile.dying) continue; }
+          if (tile.pk) {
+            const q = (t - tile.pk.t0) / 1600;
+            if (q >= 1) tile.pk = null;
+            else if (q > 0) {
+              const b = q < .35 ? ease(q / .35) : q < .65 ? 1 : 1 - ease((q - .65) / .35);
+              tile.x += (tile.pk.x - tile.x) * b; tile.y += (tile.pk.y - tile.y) * b;
+              tile.rot += b * TAU; lift = Math.max(lift, b);
+            }
+          }
         }
-        if (holding && form.home) {
-          const dx = p.x - hx, dy = p.y - hy, d = Math.hypot(dx, dy) || 1;
-          if (d < 170) { const k = 1 - d / 170; p.vx += (-dy / d * 2.4 - dx / d * .7) * k; p.vy += (dx / d * 2.4 - dy / d * .7) * k; }
+        keep.push(tile);
+        const s = tile.size * tile.sc * (1 + lift * .18);
+        if (s < .5 || !tile.img) continue;
+        ctx.save();
+        ctx.translate(tile.x, tile.y);
+        if (lift > .02 && form.kind !== 'frame') { ctx.fillStyle = `rgba(11, 18, 32, ${.1 * lift})`; ctx.fillRect(-s / 2 + 3 + lift * 4, -s / 2 + 5 + lift * 6, s, s); }
+        ctx.rotate(tile.rot);
+        ctx.scale(sx, 1);
+        if (party) { ctx.fillStyle = `hsl(${(i * 7 + t * .2) % 360}, 85%, 55%)`; ctx.fillRect(-s / 2, -s / 2, s - 1, s - 1); }
+        else {
+          ctx.drawImage(tile.img, -s / 2, -s / 2, s - 1.2, s - 1.2);
+          if (tile.slice && tile.slice.frame) {
+            const glow = Math.max(0, Math.sin(t * .005 - tile.slice.s * 40));
+            if (glow > .05) { ctx.fillStyle = `rgba(255, 255, 255, ${glow * .55})`; ctx.fillRect(-s / 2, -s / 2, s - 1.2, s - 1.2); }
+          }
         }
-        p.vx *= damp; p.vy *= damp;
-        const sp = Math.hypot(p.vx, p.vy);
-        if (sp > 24) { p.vx *= 24 / sp; p.vy *= 24 / sp; }
-        p.x += p.vx * k; p.y += p.vy * k;
-        (p.pk ? pks : rest).push(p);
+        ctx.restore();
       }
-      const rFull = form.kind === 'frame' ? 6.5 : Math.max(4.2, (form.gap || 4) * .9);
-      const chat = form.kind === 'frame';
-      let body = chat ? [255, 63, 191] : [36, 31, 92];
-      if (party) { const hue = (t * .12) % 360, k = n => { const q = (n + hue / 30) % 12; return 255 * (.55 - .45 * Math.max(-1, Math.min(q - 3, 9 - q, 1))); }; body = [k(0), k(8), k(4)]; }
-      liquid(rest, rFull, body, !chat);
-      liquid(pks, rFull * 1.15, chat ? [20, 201, 154] : [255, 63, 191], false);
+      tiles = keep;
     }
     if (document.fonts) document.fonts.load('40px "Archivo Black"').then(() => { if (form) form.key = ''; }).catch(() => {});
     requestAnimationFrame(frame);
