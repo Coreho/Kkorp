@@ -901,6 +901,66 @@ h2 {
       VW = innerWidth; VH = innerHeight;
       cv.width = VW * dpr; cv.height = VH * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      lqFit();
+    }
+
+    // ---- liquid rendering ----
+    // Every pixel is drawn as a soft blob of light on a low-resolution buffer. Where blobs overlap their
+    // density adds up; thresholding that density turns them into one solid surface, so resting letters read
+    // as solid liquid type and moving pixels stretch into streams and droplets. A light from the top-left
+    // gives the surface a glossy bevel.
+    const LQ = { scale: 2, w: 0, h: 0, src: null, sx: null, out: null, ox: null, img: null, sprites: new Map() };
+    function lqFit() {
+      LQ.scale = VW * VH > 1.6e6 ? 3 : 2;
+      LQ.w = Math.ceil(VW / LQ.scale); LQ.h = Math.ceil(VH / LQ.scale);
+      LQ.src = document.createElement('canvas'); LQ.src.width = LQ.w; LQ.src.height = LQ.h;
+      LQ.sx = LQ.src.getContext('2d', { willReadFrequently: true });
+      LQ.out = document.createElement('canvas'); LQ.out.width = LQ.w; LQ.out.height = LQ.h;
+      LQ.ox = LQ.out.getContext('2d');
+      LQ.img = LQ.ox.createImageData(LQ.w, LQ.h);
+    }
+    function sprite(r) {
+      const key = r.toFixed(2);
+      let c = LQ.sprites.get(key);
+      if (c) return c;
+      const d = Math.ceil(r * 2) + 2;
+      c = document.createElement('canvas'); c.width = c.height = d;
+      const g = c.getContext('2d'), gr = g.createRadialGradient(d / 2, d / 2, 0, d / 2, d / 2, r);
+      gr.addColorStop(0, 'rgba(255, 255, 255, .42)'); gr.addColorStop(.5, 'rgba(255, 255, 255, .24)'); gr.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      g.fillStyle = gr; g.fillRect(0, 0, d, d);
+      LQ.sprites.set(key, c);
+      return c;
+    }
+    // Draws one liquid body: the pixels in `arr` fused into a single solid surface of colour `rgb`.
+    function liquid(arr, rFull, rgb, shadow) {
+      if (!arr.length) return;
+      const { w, h, sx, scale } = LQ, spr = sprite(Math.max(1.6, rFull / scale)), o = spr.width / 2;
+      sx.globalCompositeOperation = 'source-over';
+      sx.clearRect(0, 0, w, h);
+      sx.globalCompositeOperation = 'lighter';
+      for (const p of arr) sx.drawImage(spr, p.x / scale - o, p.y / scale - o);
+      const src = sx.getImageData(0, 0, w, h).data, dst = LQ.img.data, row = w * 4;
+      const [R, G, B] = rgb;
+      for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+          const i = y * row + x * 4, a = src[i + 3];
+          if (a < 54) { dst[i + 3] = 0; continue; }
+          const edge = a >= 80 ? 1 : (a - 54) / 26;
+          // shade only near the edge: clamp density so solid interiors stay flat
+          const g = Math.min(110, src[i - row - 4 + 3]) - Math.min(110, src[i + row + 4 + 3]);
+          const hl = g > 0 ? Math.min(1, g / 55) * .7 : 0, sh = g < 0 ? Math.min(.35, -g / 180) : 0;
+          dst[i] = R * (1 - sh) + (255 - R) * hl;
+          dst[i + 1] = G * (1 - sh) + (255 - G) * hl;
+          dst[i + 2] = B * (1 - sh) + (255 - B) * hl;
+          dst[i + 3] = 255 * edge;
+        }
+      }
+      LQ.ox.putImageData(LQ.img, 0, 0);
+      ctx.save();
+      ctx.imageSmoothingEnabled = true;
+      if (shadow) { ctx.shadowColor = 'rgba(11, 18, 32, .2)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 5; }
+      ctx.drawImage(LQ.out, 0, 0, w * scale, h * scale);
+      ctx.restore();
     }
     fit();
     addEventListener('resize', fit);
@@ -958,9 +1018,12 @@ h2 {
       c.strokeStyle = '#000'; c.lineWidth = fs * .07; c.lineJoin = 'round';
       lines.forEach((l, i) => { const ly = rh / 2 + (i - (lines.length - 1) / 2) * fs * .9; c.fillText(l, rw / 2, ly); c.strokeText(l, rw / 2, ly); });
       const img = c.getImageData(0, 0, rw, rh).data;
-      const gap = Math.max(3, Math.round(fs / 24));
-      const pts = [];
-      for (let y = 0; y < rh; y += gap) for (let x = 0; x < rw; x += gap) if (img[(y * rw + x) * 4 + 3] > 128) pts.push(x / rw, y / rh);
+      // widen the sampling grid until every point can get at least one pixel, so letters stay solid
+      let gap = Math.max(4, Math.round(fs / 20)), pts;
+      do {
+        pts = [];
+        for (let y = 0; y < rh; y += gap) for (let x = 0; x < rw; x += gap) if (img[(y * rw + x) * 4 + 3] > 128) pts.push(x / rw, y / rh);
+      } while (pts.length / 2 > N * .5 && ++gap < 40);
       f.pts = pts.length ? pts : [.5, .5];
       f.n = f.pts.length / 2; f.sw = rw; f.sh = rh; f.gap = gap;
     }
@@ -1011,9 +1074,12 @@ h2 {
       }
     });
 
-    let form = null, lastSample = 0;
+    let form = null, lastSample = 0, lastT = 0;
     function frame(t) {
       requestAnimationFrame(frame);
+      // physics step scaled to real time so motion speed doesn't depend on frame rate
+      const k = Math.min(3, Math.max(.25, (t - (lastT || t - 16.7)) / 16.7)); lastT = t;
+      const damp = Math.pow(.8, k);
       const f2 = pick();
       if (!form || f2.key !== form.key) {
         form = f2;
@@ -1036,7 +1102,7 @@ h2 {
       }
       const party = t < S.partyUntil, falling = t < S.partyUntil - 4200;
       ctx.clearRect(0, 0, VW, VH);
-      const rest = [], mid = [], fast = [], pks = [];
+      const rest = [], pks = [];
       for (let i = 0; i < N; i++) {
         const p = ps[i];
         let tx, ty;
@@ -1050,42 +1116,33 @@ h2 {
             const k = p.k % form.n, dup = p.k >= form.n || i >= form.n;
             tx = R.left + form.pts[k * 2] * R.width + (dup ? ((i * 7919) % 5 - 2) * .6 : 0);
             ty = R.top + form.pts[k * 2 + 1] * R.height + (dup ? ((i * 104729) % 5 - 2) * .6 : 0);
-            tx += Math.sin(t * .0021 + ty * .045 + tx * .03) * 1.1; ty += Math.cos(t * .0017 + tx * .04 + ty * .02) * 1.1;
+            tx += Math.sin(t * .0018 + ty * .03 + tx * .02) * .45; ty += Math.cos(t * .0015 + tx * .03 + ty * .015) * .45;
           }
           p.lx = tx; p.ly = ty;
           if (t < p.go) { tx = p.hx; ty = p.hy; }
         }
         if (falling) {
-          p.vy += .55;
+          p.vy += .55 * k;
           if (p.y > VH - 70) { p.y = VH - 70; p.vy *= -.45; p.vx *= .9; }
         } else {
-          p.vx += (tx - p.x) * .02; p.vy += (ty - p.y) * .02;
+          p.vx += (tx - p.x) * .032 * k; p.vy += (ty - p.y) * .032 * k;
         }
         if (holding && form.home) {
           const dx = p.x - hx, dy = p.y - hy, d = Math.hypot(dx, dy) || 1;
           if (d < 170) { const k = 1 - d / 170; p.vx += (-dy / d * 2.4 - dx / d * .7) * k; p.vy += (dx / d * 2.4 - dy / d * .7) * k; }
         }
-        p.vx *= .86; p.vy *= .86;
+        p.vx *= damp; p.vy *= damp;
         const sp = Math.hypot(p.vx, p.vy);
-        if (sp > 17) { p.vx *= 17 / sp; p.vy *= 17 / sp; }
-        p.x += p.vx; p.y += p.vy;
-        if (party) continue;
-        (p.pk ? pks : sp < 1.4 ? rest : sp < 6 ? mid : fast).push(p);
+        if (sp > 24) { p.vx *= 24 / sp; p.vy *= 24 / sp; }
+        p.x += p.vx * k; p.y += p.vy * k;
+        (p.pk ? pks : rest).push(p);
       }
-      if (party) {
-        for (let i = 0; i < N; i++) { const p = ps[i]; ctx.fillStyle = `hsl(${(i * 2.3 + t * .25) % 360}, 90%, 52%)`; ctx.fillRect(p.x - 1.4, p.y - 1.4, 2.8, 2.8); }
-        return;
-      }
-      const sq = (arr, color, size) => { ctx.fillStyle = color; for (const p of arr) ctx.fillRect(p.x - size / 2, p.y - size / 2, size, size); };
-      sq(rest, form.rest, 2.4);
-      sq(mid, '#ff3fbf', 2.6);
-      ctx.lineWidth = 1.6; ctx.lineCap = 'round';
-      ['#14c99a', '#ff3fbf'].forEach((c, h) => {
-        ctx.strokeStyle = c; ctx.beginPath();
-        for (let j = h; j < fast.length; j += 2) { const p = fast[j]; ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * .7, p.y - p.vy * .7); }
-        ctx.stroke();
-      });
-      sq(pks, '#ff3fbf', 3);
+      const rFull = form.kind === 'frame' ? 6.5 : Math.max(4.2, (form.gap || 4) * .9);
+      const chat = form.kind === 'frame';
+      let body = chat ? [255, 63, 191] : [36, 31, 92];
+      if (party) { const hue = (t * .12) % 360, k = n => { const q = (n + hue / 30) % 12; return 255 * (.55 - .45 * Math.max(-1, Math.min(q - 3, 9 - q, 1))); }; body = [k(0), k(8), k(4)]; }
+      liquid(rest, rFull, body, !chat);
+      liquid(pks, rFull * 1.15, chat ? [20, 201, 154] : [255, 63, 191], false);
     }
     if (document.fonts) document.fonts.load('40px "Archivo Black"').then(() => { if (form) form.key = ''; }).catch(() => {});
     requestAnimationFrame(frame);

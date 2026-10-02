@@ -6,7 +6,7 @@ All content is sample data and the chat room is scripted (no backend yet).
 ## What's in it
 
 - **Four panels** (KoreoKorp, Blog, Projects, Chat room) based on the "Future Workspaces" layout. Click a panel to expand it; Esc or ✕ closes it.
-- **One set of pixels for the whole site**: ~2,400 pixels form the KoreoKorp wordmark at home, fly across panel borders to spell BLOG / WORK, march around the chat window, and carry each chat message into the room. Click the wordmark to blast it, hold to swirl.
+- **One shared liquid for the whole site**: ~2,400 particles render as a single solid, glossy liquid (metaball threshold). They form the KoreoKorp wordmark at home, pour across panel borders to spell BLOG / WORK, become a neon ring around the chat window, and carry each chat message in as droplets. Click the wordmark to splash it, hold to swirl. Physics is time-based, so speed is the same at any frame rate.
 - **KoreoKorp panel**: rotating live words (last speaker, people online), a "Spell something" box, About content (timeline and links are placeholders).
 - **Blog panel**: self-writing page that cascades on hover; opened, it fills the screen and scrolls slowly with yellow highlights.
 - **Projects panel**: draggable node graph; click empty space to add a node.
