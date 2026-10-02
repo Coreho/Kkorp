@@ -407,7 +407,7 @@ h2 {
       <h2>KoreoKorp</h2>
       <div class="rest stack">
         <p class="blurb">A small corner of the internet. Posts, projects, and a chat room you can walk into with nothing but a screen name.</p>
-        <p class="try">Click to shuffle</p>
+        <p class="try">Click the shape</p>
         <p class="now" data-now aria-live="polite"></p>
       </div>
       <div class="detail about">
@@ -430,14 +430,7 @@ h2 {
             </ul>
           </section>
         </div>
-        <form class="spell" id="spell">
-          <label for="spellIn">Spell something</label>
-          <div class="spell-row">
-            <input id="spellIn" maxlength="12" autocomplete="off" spellcheck="false" placeholder="Type a word">
-            <button type="submit">Spell it</button>
-          </div>
-          <p class="now" data-now aria-live="polite"></p>
-        </form>
+        <p class="now" data-now aria-live="polite"></p>
       </div>
       <button class="action" data-open><span>About</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></button>
     </div>
@@ -795,7 +788,7 @@ h2 {
       case 'spell':
         if (!arg) { add({ sys: true, text: '*** Usage: /spell WORD (up to 12 letters)' }); break; }
         document.dispatchEvent(new CustomEvent('kk:spell', { detail: { text: arg } }));
-        add({ sys: true, text: '*** ' + me + ' spelled "' + arg.slice(0, 12).toUpperCase() + '" on the front page.' });
+        add({ sys: true, text: '*** ' + me + ' put "' + arg.slice(0, 12).toUpperCase() + '" on the front page.' });
         say('Y2Kpixie', 'omg ' + me + ' it\u2019s on the HOMEPAGE!!!');
         break;
       case 'party':
@@ -883,9 +876,9 @@ h2 {
     };
   }
 
-  // 1 · Sliding tiles. One shared set of solid letter tiles shows where you are: the KoreoKorp wordmark at home,
-  // BLOG / WORK in those panels, a tile frame around the chat window. Changing place breaks the word into tiles
-  // that lift, slide and spin across the screen, then lock into the next word like a sliding-tile puzzle.
+  // 1 · One morphing shape shows where you are. A single solid, jelly-edged shape glides between panels,
+  // stretching in the direction it travels, and melts into an icon for the current place: a K at home,
+  // a page in the blog, a hexagon node in projects, a speech bubble on the chat window.
   const swarm = (() => {
     const mainEl = document.getElementById('panels');
     const p1 = mainEl.querySelector('.p1');
@@ -905,156 +898,96 @@ h2 {
     addEventListener('resize', fit);
 
     const S = {
-      word: 'KOREO\nKORP', wi: 0, holdUntil: 0, partyUntil: 0, speaker: 'Y2Kpixie', online: 5,
-      lastInteract: 0, pendingMorph: 0, pendingSame: false,
-      // Idle rotation on the home wordmark. Live entries read the chat room.
+      wi: 0, holdUntil: 0, partyUntil: 0, speaker: 'Y2Kpixie', online: 5, lastInteract: 0,
+      // Rotating caption under the KoreoKorp blurb. Live entries read the chat room.
       cycle: [
-        () => ['KOREO\nKORP', 'Click it to shuffle the tiles.'],
-        () => [this_.speaker.toUpperCase(), `<b>${esc(this_.speaker)}</b> spoke last in The Lobby`],
-        () => [`${this_.online}\nONLINE`, 'People in The Lobby right now'],
-        () => ['SAY\nHI', 'The chat room is always open'],
-        () => [':-)', 'Classic.'],
-        () => ['A/S/L?', 'Please don’t actually answer that.'],
-        () => ['BRB', 'Away message energy'],
+        () => [null, 'Click the shape. It always bounces back.'],
+        () => [null, `<b>${esc(this_.speaker)}</b> spoke last in The Lobby`],
+        () => [null, `<b>${this_.online}</b> people in The Lobby right now`],
+        () => [null, 'The chat room is always open. Say hi.'],
+        () => [null, 'A/S/L? Please don’t actually answer that.'],
+        () => [null, 'BRB energy. Away messages are back.'],
       ],
-      setWord(text, caption, holdMs) {
-        this.word = text;
+      // Kept for the chat commands and the join greeting: updates the caption and gives the shape a happy bounce.
+      setWord(_text, caption, holdMs) {
         document.querySelectorAll('[data-now]').forEach(el => { el.innerHTML = caption; });
-        if (holdMs) this.holdUntil = performance.now() + holdMs;
+        if (holdMs) { this.holdUntil = performance.now() + holdMs; splash(5); }
       },
-      morph() { this.wi = (this.wi + 1) % this.cycle.length; const [w, c] = this.cycle[this.wi](); this.setWord(w, c); },
+      morph() { this.wi = (this.wi + 1) % this.cycle.length; this.setWord(null, this.cycle[this.wi]()[1]); },
     };
 
-    const INKC = '#241f5c', TAU = Math.PI * 2;
-    const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+    // ---- icon outlines in a unit box (-1..1, y down), each one closed contour ----
+    const N = 180, TAU = Math.PI * 2;
+    function roundRect(x0, y0, x1, y1, r, tail) {
+      const pts = [], arc = (cx, cy, a0) => { for (let i = 0; i <= 8; i++) { const a = a0 + i / 8 * Math.PI / 2; pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } };
+      arc(x1 - r, y0 + r, -Math.PI / 2);
+      arc(x1 - r, y1 - r, 0);
+      if (tail) pts.push(...tail);
+      arc(x0 + r, y1 - r, Math.PI / 2);
+      arc(x0 + r, y0 + r, Math.PI);
+      return pts;
+    }
+    const ICONS = {
+      k: [[-.62, -1], [-.2, -1], [-.2, -.2], [.36, -1], [.86, -1], [.18, -.06], [.9, 1], [.4, 1], [-.06, .22], [-.2, .38], [-.2, 1], [-.62, 1]],
+      page: [[-.72, -1], [.28, -1], [.74, -.54], [.74, 1], [-.72, 1]],
+      node: [...Array(6).keys()].map(i => { const a = -Math.PI / 2 + i * TAU / 6; return [Math.cos(a) * .98, Math.sin(a) * .98]; }),
+      bubble: roundRect(-1, -.78, 1, .46, .34, [[-.12, .46], [-.6, .98], [-.5, .46]]),
+    };
+    function resample(poly) {
+      // even spacing along the outline, clockwise, starting from the point nearest straight up
+      let area = 0;
+      for (let i = 0; i < poly.length; i++) { const [x0, y0] = poly[i], [x1, y1] = poly[(i + 1) % poly.length]; area += x0 * y1 - x1 * y0; }
+      const P = area < 0 ? [...poly].reverse() : poly;
+      const segs = [], L = [0];
+      for (let i = 0; i < P.length; i++) { const a = P[i], b = P[(i + 1) % P.length]; segs.push([a, b]); L.push(L[i] + Math.hypot(b[0] - a[0], b[1] - a[1])); }
+      const total = L[L.length - 1], out = [];
+      for (let k = 0, s = 0; k < N; k++) {
+        const d = k / N * total;
+        while (L[s + 1] < d) s++;
+        const [a, b] = segs[s], f = (d - L[s]) / (L[s + 1] - L[s] || 1);
+        out.push([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]);
+      }
+      let best = 0, bd = 1e9;
+      out.forEach(([x, y], i) => { const d = Math.abs(Math.atan2(y, x) + Math.PI / 2) + (y > 0 ? 9 : 0); if (d < bd) { bd = d; best = i; } });
+      return out.slice(best).concat(out.slice(0, best));
+    }
+    const SHAPES = Object.fromEntries(Object.entries(ICONS).map(([k, v]) => [k, resample(v)]));
 
-    // ---- formations: where the tiles should be right now ----
-    function pick() {
+    // ---- where the shape should be right now ----
+    function place() {
       const open = mainEl.querySelector('.panel.open');
       const name = open ? open.dataset.panel : 'home';
-      if (name === 'chat') return { key: 'chat', kind: 'frame', el: document.querySelector('.aim') };
-      if (name === 'blog') return { key: 'blog', kind: 'word', el: open, box: [.54, .09, .93, .29], word: 'BLOG' };
-      if (name === 'projects') return { key: 'work', kind: 'word', el: open, box: [.6, .63, .95, .86], word: 'WORK' };
-      const box = name === 'about' ? [.46, .46, .95, .84] : [.07, .46, .93, .84];
-      return { key: name + ':' + S.word, kind: 'word', el: p1, box, word: S.word, home: true };
-    }
-    function region(f) {
-      const r = f.el.getBoundingClientRect();
-      if (f.kind === 'frame') return r;
-      return { left: r.left + r.width * f.box[0], top: r.top + r.height * f.box[1], width: r.width * (f.box[2] - f.box[0]), height: r.height * (f.box[3] - f.box[1]) };
-    }
-
-    // ---- cut the formation into tiles ----
-    function sliceWord(f, R) {
-      const rw = Math.max(40, Math.round(R.width)), rh = Math.max(30, Math.round(R.height));
-      const lines = f.word.split('\n');
-      const off = document.createElement('canvas'); off.width = rw; off.height = rh;
-      const c = off.getContext('2d');
-      const face = sz => `900 ${sz}px "Archivo Black", "Arial Black", Impact, Arial, sans-serif`;
-      let fs = rh / lines.length * .82;
-      c.font = face(fs);
-      const widest = Math.max(...lines.map(l => c.measureText(l).width));
-      fs = Math.min(fs, fs * rw / widest);
-      c.font = face(fs); c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillStyle = INKC; c.strokeStyle = INKC; c.lineWidth = fs * .05; c.lineJoin = 'round';
-      lines.forEach((l, i) => { const ly = rh / 2 + (i - (lines.length - 1) / 2) * fs * .9; c.fillText(l, rw / 2, ly); c.strokeText(l, rw / 2, ly); });
-      const img = c.getImageData(0, 0, rw, rh).data;
-      let size = Math.max(9, Math.min(30, Math.round(fs / 6)));
-      let out;
-      do {
-        out = [];
-        for (let gy = 0; gy < rh; gy += size) for (let gx = 0; gx < rw; gx += size) {
-          let ink = 0;
-          for (let y = gy; y < Math.min(rh, gy + size); y += 2) for (let x = gx; x < Math.min(rw, gx + size); x += 2) if (img[(y * rw + x) * 4 + 3] > 90) ink++;
-          if (ink < 2) continue;
-          const tc = document.createElement('canvas'); tc.width = tc.height = size;
-          tc.getContext('2d').drawImage(off, gx, gy, size, size, 0, 0, size, size);
-          out.push({ u: (gx + size / 2) / rw, v: (gy + size / 2) / rh, su: size / rw, img: tc });
-        }
-      } while (out.length > 520 && ++size < 60);
-      f.sw = rw; f.sh = rh;
-      return out;
-    }
-    const frameTile = (() => {
-      const make = (fill, hi) => {
-        const t = document.createElement('canvas'); t.width = t.height = 16;
-        const g = t.getContext('2d');
-        g.fillStyle = fill; g.fillRect(0, 0, 16, 16);
-        g.fillStyle = hi; g.fillRect(0, 0, 16, 2); g.fillRect(0, 0, 2, 16);
-        g.fillStyle = 'rgba(0, 0, 0, .25)'; g.fillRect(0, 14, 16, 2); g.fillRect(14, 0, 2, 16);
-        return t;
-      };
-      return [make('#ff3fbf', '#ff9be0'), make('#14c99a', '#8ff0d6')];
-    })();
-    function sliceFrame(f, R) {
-      const per = 2 * (R.width + R.height + 56), n = Math.max(40, Math.floor(per / 19));
-      return [...Array(n).keys()].map(i => ({ s: i / n, img: frameTile[i % 9 === 0 ? 1 : 0], frame: true }));
-    }
-    function perimeter(r, e, s) {
-      const x0 = Math.max(10, r.left - e), y0 = Math.max(10, r.top - e), x1 = Math.min(VW - 10, r.right + e), y1 = Math.min(VH - 10, r.bottom + e);
-      const w = x1 - x0, h = y1 - y0, d = (((s % 1) + 1) % 1) * 2 * (w + h);
-      if (d < w) return [x0 + d, y0];
-      if (d < w + h) return [x1, y0 + d - w];
-      if (d < 2 * w + h) return [x1 - (d - w - h), y1];
-      return [x0, y1 - (d - 2 * w - h)];
-    }
-    function pos(sl, R, t) {
-      if (sl.abs) return sl.abs;
-      if (sl.frame) { const [x, y] = perimeter(R, 16, sl.s + t * .000018); return { x, y, size: 15 }; }
-      return { x: R.left + sl.u * R.width, y: R.top + sl.v * R.height, size: sl.su * R.width };
-    }
-
-    // ---- tiles ----
-    let tiles = [];
-    function retarget(slices, R, t, quick) {
-      const live = tiles.filter(x => !x.dying).sort((a, b) => a.x - b.x || a.y - b.y);
-      const P = slices.map(sl => pos(sl, R, t));
-      const order = [...slices.keys()].sort((a, b) => P[a].x - P[b].x || P[a].y - P[b].y);
-      const m = Math.max(live.length, slices.length), next = [];
-      for (let i = 0; i < m; i++) {
-        let tile = live[i];
-        if (!tile) {
-          const src = live.length ? live[Math.floor(Math.random() * live.length)] : { x: Math.random() * VW, y: VH + 40, size: 14, img: null };
-          tile = { x: src.x, y: src.y, rot: 0, sc: live.length ? 0 : 1, size: src.size, img: src.img };
-        }
-        const dying = i >= slices.length;
-        const sl = dying ? { abs: P[order[Math.floor(Math.random() * slices.length)]] || { x: tile.x, y: tile.y, size: tile.size } } : slices[order[i]];
-        const to = pos(sl, R, t), dist = Math.hypot(to.x - tile.x, to.y - tile.y);
-        Object.assign(tile, {
-          slice: sl, dying, nextImg: dying ? tile.img : sl.img,
-          from: { x: tile.x, y: tile.y, rot: tile.rot, sc: tile.sc, size: tile.size },
-          spin: quick || dist < 60 ? 0 : (Math.random() < .5 ? -1 : 1) * TAU * (dist > 400 ? 2 : 1),
-          t0: t + (quick ? 0 : (i / m) * 420 + Math.random() * 90),
-          dur: quick ? 240 : Math.min(1150, 480 + dist * .35),
-          flip: false,
-        });
-        if (!tile.img) tile.img = tile.nextImg;
-        tile.flip = tile.img !== tile.nextImg && tile.spin === 0;
-        next.push(tile);
+      const box = (el, b) => { const r = el.getBoundingClientRect(); return { x: r.left + r.width * (b[0] + b[2]) / 2, y: r.top + r.height * (b[1] + b[3]) / 2, size: Math.min(r.width * (b[2] - b[0]), r.height * (b[3] - b[1])) }; };
+      if (name === 'chat') {
+        const r = document.querySelector('.aim').getBoundingClientRect(), size = 96;
+        return { icon: 'bubble', rgb: [255, 63, 191], x: Math.max(size / 2 + 8, r.left + 18), y: Math.max(size / 2 + 8, r.top - 30), size };
       }
-      tiles = next.concat(tiles.filter(x => x.dying && !next.includes(x)));
+      if (name === 'blog') return { icon: 'page', rgb: [36, 31, 92], ...box(open, [.62, .07, .9, .31]) };
+      if (name === 'projects') return { icon: 'node', rgb: [36, 31, 92], ...box(open, [.66, .6, .93, .88]) };
+      const b = box(p1, name === 'about' ? [.55, .44, .9, .84] : [.12, .46, .88, .84]);
+      return { icon: 'k', rgb: [36, 31, 92], ...b, size: b.size * .92, home: true };
     }
 
-    // ---- click the home wordmark to shuffle it; nothing happens on hover ----
+    // ---- state ----
+    const C = { x: VW * .2, y: VH * .7, vx: 0, vy: 0, size: 0, rot: 0 };
+    const V = [...Array(N)].map(() => ({ x: C.x, y: C.y, vx: 0, vy: 0 }));
+    let icon = 'k', iconAt = 0, rgb = [36, 31, 92], spinAt = -1e9, drops = [], lastT = 0, primed = false, phys = null;
+    function splash(force) {
+      for (const v of V) { const dx = v.x - C.x, dy = v.y - C.y, d = Math.hypot(dx, dy) || 1; v.vx += dx / d * force; v.vy += dy / d * force; }
+    }
+
+    // click the home shape: it splats, spins and jiggles back. Nothing happens on hover.
     let downX = 0, downY = 0, down = false;
     const interactive = e => e.target.closest('button, input, textarea, a, label, form, .aim');
     p1.addEventListener('pointerdown', e => { if (interactive(e)) return; down = true; downX = e.clientX; downY = e.clientY; });
     document.addEventListener('pointerup', e => {
       if (!down) return;
       down = false;
-      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 6 || !form || !form.home) return;
-      const t = performance.now(), R = region(form);
-      // scramble: every tile jumps to a random spot in the word's box, then the word re-solves
-      tiles.forEach(tile => {
-        if (tile.dying) return;
-        tile.from = { x: tile.x, y: tile.y, rot: tile.rot, sc: tile.sc, size: tile.size };
-        tile.slice = { abs: { x: R.left + Math.random() * R.width, y: R.top + Math.random() * R.height, size: tile.size } };
-        tile.nextImg = tile.img; tile.spin = (Math.random() < .5 ? -1 : 1) * TAU / 2; tile.t0 = t; tile.dur = 300; tile.flip = false;
-      });
-      S.pendingMorph = t + 340; S.pendingSame = t < S.holdUntil; S.lastInteract = t;
+      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 6) return;
+      splash(14); spinAt = performance.now(); S.lastInteract = spinAt;
     });
 
-    // ---- every chat message is carried in by a few tiles ----
+    // every chat message: a droplet breaks off the shape and flies to it
     document.addEventListener('kk:chat', () => {
       const open = mainEl.querySelector('.panel.open');
       const target = !open ? document.querySelector('#preview li:last-child')
@@ -1062,106 +995,109 @@ h2 {
       if (!target) return;
       const r = target.getBoundingClientRect();
       if (!r.width || r.bottom < 0 || r.top > VH) return;
-      const t = performance.now(), pool = tiles.filter(x => !x.dying && !x.pk);
-      for (let j = 0; j < 5 && pool.length; j++) {
-        const tile = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
-        tile.pk = { x: r.left + 10 + j * 22, y: r.top + r.height / 2, t0: t + j * 70 };
-      }
+      drops.push({ x0: C.x, y0: C.y, x1: r.left + 8, y1: r.top + r.height / 2, t0: performance.now(), rgb: [...rgb] });
+      splash(3);
     });
 
-    let form = null, slices = [], lastSample = 0, lastR = null, stableSince = 0, wasFalling = false, lastT = 0;
+    const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+    const rgbStr = (c, a = 1) => `rgba(${c[0] | 0}, ${c[1] | 0}, ${c[2] | 0}, ${a})`;
     function frame(t) {
       requestAnimationFrame(frame);
       const k = Math.min(3, Math.max(.25, (t - (lastT || t - 16.7)) / 16.7)); lastT = t;
-      const f2 = pick();
-      if (!f2.el) return;
-      let R;
-      if (!form || f2.key !== form.key) {
-        form = f2; R = region(form);
-        slices = form.kind === 'frame' ? sliceFrame(form, R) : sliceWord(form, R);
-        retarget(slices, R, t, false);
-        lastSample = t;
-      } else { form.el = f2.el; R = region(form); }
-      // re-cut once the panel has finished resizing
-      if (lastR && (Math.abs(lastR.width - R.width) > 1 || Math.abs(lastR.height - R.height) > 1)) stableSince = t;
-      lastR = { width: R.width, height: R.height };
-      if (form.kind === 'word' && t - stableSince > 160 && t - lastSample > 200 && (Math.abs(R.width - form.sw) > form.sw * .06 || Math.abs(R.height - form.sh) > form.sh * .06)) {
-        slices = sliceWord(form, R); retarget(slices, R, t, true); lastSample = t;
-      }
-      if (form.kind === 'frame' && t - lastSample > 400 && Math.abs(slices.length - Math.floor(2 * (R.width + R.height + 56) / 19)) > 3) {
-        slices = sliceFrame(form, R); retarget(slices, R, t, true); lastSample = t;
-      }
-      if (form.home) {
-        if (S.pendingMorph && t > S.pendingMorph) {
-          S.pendingMorph = 0;
-          if (S.pendingSame) { slices = sliceWord(form, R); retarget(slices, R, t, false); } else S.morph();
-        }
-        if (t - S.lastInteract > 9000 && t > S.holdUntil) { S.lastInteract = t; S.morph(); }
-      }
+      const P = place();
+      if (!primed) { Object.assign(C, { x: P.x, y: P.y + 200, size: P.size }); V.forEach(v => { v.x = C.x; v.y = C.y; }); primed = true; }
+      if (P.icon !== icon) { icon = P.icon; iconAt = t; }
+      if (P.home && t - S.lastInteract > 9000 && t > S.holdUntil) { S.lastInteract = t; S.morph(); }
 
+      // centre: spring toward the target place (or bounce on the floor during /party)
       const party = t < S.partyUntil, falling = t < S.partyUntil - 4200;
-      if (wasFalling && !falling) retarget(slices, R, t, false);
-      wasFalling = falling;
+      if (falling) {
+        if (!phys) phys = true;
+        C.vy += .9 * k;
+        const floor = VH - C.size * .5 - 10;
+        if (C.y > floor) { C.y = floor; C.vy *= -.62; splash(4); }
+      } else {
+        phys = null;
+        C.vx += (P.x - C.x) * .055 * k; C.vy += (P.y - C.y) * .055 * k;
+      }
+      const damp = Math.pow(.8, k);
+      C.vx *= damp; C.vy *= damp;
+      C.x += C.vx * k; C.y += C.vy * k;
+      C.size += (P.size - C.size) * Math.min(1, .1 * k);
+      for (let i = 0; i < 3; i++) rgb[i] += (P.rgb[i] - rgb[i]) * Math.min(1, .08 * k);
+      let fill = rgb;
+      if (party) { const h = (t * .2) % 360, f = n => { const q = (n + h / 30) % 12; return 255 * (.55 - .45 * Math.max(-1, Math.min(q - 3, 9 - q, 1))); }; fill = [f(0), f(8), f(4)]; }
+
+      // stretch along the direction of travel, squash across it
+      const speed = Math.hypot(C.vx, C.vy), dir = Math.atan2(C.vy, C.vx);
+      const st = 1 + Math.min(.6, speed * .028), cs = Math.cos(dir), sn = Math.sin(dir);
+      const spinP = Math.min(1, (t - spinAt) / 700), spin = spinP < 1 ? ease(spinP) * TAU : 0;
+      const breathe = P.home && speed < .5 ? 1 + Math.sin(t * .0022) * .025 : 1;
+      C.rot = spin + (party ? t * .004 : 0);
+      const cr = Math.cos(C.rot), sr = Math.sin(C.rot), sc = C.size / 2 * breathe;
+      const target = SHAPES[icon];
+      for (let i = 0; i < N; i++) {
+        const v = V[i];
+        let [ux, uy] = target[i];
+        ux *= sc; uy *= sc;
+        let x = ux * cr - uy * sr, y = ux * sr + uy * cr;
+        const a = x * cs + y * sn, b = -x * sn + y * cs;
+        x = a * st * cs - b / st * sn; y = a * st * sn + b / st * cs;
+        v.vx += (C.x + x - v.x) * .2 * k; v.vy += (C.y + y - v.y) * .2 * k;
+        const vd = Math.pow(.62, k);
+        v.vx *= vd; v.vy *= vd;
+        v.x += v.vx * k; v.y += v.vy * k;
+      }
 
       ctx.clearRect(0, 0, VW, VH);
-      const keep = [];
-      for (let i = 0; i < tiles.length; i++) {
-        const tile = tiles[i];
-        let lift = 0, sx = 1;
-        if (falling) {
-          if (!tile.phys) tile.phys = { vx: (Math.random() - .5) * 8, vy: -Math.random() * 8, vr: (Math.random() - .5) * .3 };
-          const ph = tile.phys;
-          ph.vy += .6 * k; tile.x += ph.vx * k; tile.y += ph.vy * k; tile.rot += ph.vr * k;
-          const floor = VH - tile.size / 2 - 8;
-          if (tile.y > floor) { tile.y = floor; ph.vy *= -.4; ph.vx *= .8; ph.vr *= .7; }
-          if (tile.x < 0 || tile.x > VW) ph.vx *= -1;
-          lift = .3;
-        } else {
-          tile.phys = null;
-          const to = pos(tile.slice, R, t), f = tile.from;
-          const p = Math.max(0, Math.min(1, (t - tile.t0) / tile.dur)), e = ease(p);
-          tile.x = f.x + (to.x - f.x) * e; tile.y = f.y + (to.y - f.y) * e;
-          tile.size = f.size + (to.size - f.size) * e;
-          const endRot = Math.round((f.rot + tile.spin) / TAU) * TAU;
-          tile.rot = f.rot + (endRot - f.rot) * e;
-          tile.sc = (tile.dying ? f.sc * (1 - e) : f.sc + (1 - f.sc) * e);
-          if (p > 0 && p < 1) lift = Math.sin(Math.PI * p);
-          if (p >= .5 && tile.img !== tile.nextImg) tile.img = tile.nextImg;
-          if (tile.flip && p > 0 && p < 1) sx = Math.max(.08, Math.abs(Math.cos(Math.PI * p)));
-          const land = t - (tile.t0 + tile.dur);
-          if (land > 0 && land < 200 && !tile.dying) tile.sc *= 1 + .14 * (1 - land / 200);
-          if (p >= 1) { tile.rot = 0; if (tile.dying) continue; }
-          if (tile.pk) {
-            const q = (t - tile.pk.t0) / 1600;
-            if (q >= 1) tile.pk = null;
-            else if (q > 0) {
-              const b = q < .35 ? ease(q / .35) : q < .65 ? 1 : 1 - ease((q - .65) / .35);
-              tile.x += (tile.pk.x - tile.x) * b; tile.y += (tile.pk.y - tile.y) * b;
-              tile.rot += b * TAU; lift = Math.max(lift, b);
-            }
-          }
-        }
-        keep.push(tile);
-        const s = tile.size * tile.sc * (1 + lift * .18);
-        if (s < .5 || !tile.img) continue;
+      // droplets
+      drops = drops.filter(d => {
+        const q = (t - d.t0) / 900;
+        if (q >= 1.25) return false;
+        const e = ease(Math.min(1, q)), x = d.x0 + (d.x1 - d.x0) * e, y = d.y0 + (d.y1 - d.y0) * e - Math.sin(Math.PI * Math.min(1, q)) * 60;
+        const r = 9 * (q < 1 ? 1 : 1 - (q - 1) / .25);
+        ctx.fillStyle = rgbStr(d.rgb); ctx.beginPath(); ctx.arc(x, y, Math.max(0, r), 0, TAU); ctx.fill();
+        return true;
+      });
+      // the shape itself, drawn as a smooth curve through the jelly outline
+      ctx.save();
+      ctx.shadowColor = 'rgba(11, 18, 32, .25)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 10;
+      const g = ctx.createLinearGradient(C.x - sc, C.y - sc, C.x + sc, C.y + sc);
+      g.addColorStop(0, rgbStr(fill.map(c => Math.min(255, c + 40)))); g.addColorStop(1, rgbStr(fill));
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      const mid = i => { const a = V[i % N], b = V[(i + 1) % N]; return [(a.x + b.x) / 2, (a.y + b.y) / 2]; };
+      let m = mid(0); ctx.moveTo(m[0], m[1]);
+      for (let i = 1; i <= N; i++) { const p = V[i % N]; m = mid(i); ctx.quadraticCurveTo(p.x, p.y, m[0], m[1]); }
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+
+      // icon details fade in once the shape has settled
+      const settled = Math.max(0, Math.min(1, (t - iconAt - 450) / 300)) * Math.max(0, 1 - speed / 3);
+      if (settled > .02 && !party) {
         ctx.save();
-        ctx.translate(tile.x, tile.y);
-        if (lift > .02 && form.kind !== 'frame') { ctx.fillStyle = `rgba(11, 18, 32, ${.1 * lift})`; ctx.fillRect(-s / 2 + 3 + lift * 4, -s / 2 + 5 + lift * 6, s, s); }
-        ctx.rotate(tile.rot);
-        ctx.scale(sx, 1);
-        if (party) { ctx.fillStyle = `hsl(${(i * 7 + t * .2) % 360}, 85%, 55%)`; ctx.fillRect(-s / 2, -s / 2, s - 1, s - 1); }
-        else {
-          ctx.drawImage(tile.img, -s / 2, -s / 2, s - 1.2, s - 1.2);
-          if (tile.slice && tile.slice.frame) {
-            const glow = Math.max(0, Math.sin(t * .005 - tile.slice.s * 40));
-            if (glow > .05) { ctx.fillStyle = `rgba(255, 255, 255, ${glow * .55})`; ctx.fillRect(-s / 2, -s / 2, s - 1.2, s - 1.2); }
-          }
+        ctx.translate(C.x, C.y); ctx.rotate(C.rot); ctx.scale(sc, sc);
+        ctx.globalAlpha = settled;
+        ctx.fillStyle = 'rgba(255, 255, 255, .92)';
+        const bar = (x0, x1, y, h) => { ctx.beginPath(); ctx.roundRect(x0, y - h / 2, x1 - x0, h, h / 2); ctx.fill(); };
+        if (icon === 'page') {
+          ctx.fillStyle = 'rgba(255, 255, 255, .35)';
+          ctx.beginPath(); ctx.moveTo(.28, -1); ctx.lineTo(.28, -.54); ctx.lineTo(.74, -.54); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = 'rgba(255, 255, 255, .92)';
+          bar(-.46, .2, -.5, .1); bar(-.46, .48, -.16, .1); bar(-.46, .48, .14, .1); bar(-.46, .48, .44, .1); bar(-.46, .1, .74, .1);
+        } else if (icon === 'node') {
+          ctx.lineWidth = .1; ctx.strokeStyle = 'rgba(255, 255, 255, .92)';
+          ctx.beginPath(); ctx.arc(0, 0, .42, 0, TAU); ctx.stroke();
+          ctx.beginPath(); ctx.arc(0, 0, .14, 0, TAU); ctx.fill();
+        } else if (icon === 'bubble') {
+          for (let j = 0; j < 3; j++) { const hop = Math.max(0, Math.sin(t * .008 - j * .9)) * .12; ctx.beginPath(); ctx.arc(-.45 + j * .45, -.16 - hop, .13, 0, TAU); ctx.fill(); }
+        } else if (icon === 'k') {
+          ctx.fillStyle = 'rgba(255, 255, 255, .18)';
+          ctx.beginPath(); ctx.ellipse(-.42, -.62, .1, .26, 0, 0, TAU); ctx.fill();
         }
         ctx.restore();
       }
-      tiles = keep;
     }
-    if (document.fonts) document.fonts.load('40px "Archivo Black"').then(() => { if (form) form.key = ''; }).catch(() => {});
     requestAnimationFrame(frame);
     return S;
   })();
@@ -1173,16 +1109,14 @@ h2 {
   document.addEventListener('kk:count', e => { swarm.online = e.detail.n; });
   document.addEventListener('kk:join', e => { swarm.setWord('HI\n' + e.detail.who.toUpperCase(), `Welcome to The Lobby, <b>${esc(e.detail.who)}</b>`, 12000); });
   // Spell something
-  const spell = document.getElementById('spell'), spellIn = document.getElementById('spellIn');
-  spell.addEventListener('click', e => e.stopPropagation());
+
   function spellWord(raw, caption) {
     let v = raw.toUpperCase().replace(/[^A-Z0-9 !?:\-)(/.'&]/g, '').trim().slice(0, 12);
     if (!v) return;
     if (v.length > 6 && v.includes(' ')) { const i = v.lastIndexOf(' ', Math.ceil(v.length / 2) + 1); v = v.slice(0, i) + '\n' + v.slice(i + 1); }
-    swarm.setWord(v, caption ? caption(esc(v.replace('\n', ' '))) : `Spelling <b>${esc(v.replace('\n', ' '))}</b>. Click it to blast it apart.`, 20000);
+    swarm.setWord(v, caption ? caption(esc(v.replace('\n', ' '))) : `<b>${esc(v.replace('\n', ' '))}</b>`, 20000);
   }
-  spell.addEventListener('submit', e => { e.preventDefault(); spellWord(spellIn.value); spellIn.select(); });
-  document.addEventListener('kk:spell', e => spellWord(e.detail.text, w => `<b>${w}</b>, sent from The Lobby with /spell`));
+  document.addEventListener('kk:spell', e => spellWord(e.detail.text, w => `Someone in The Lobby says <b>${w}</b>`));
   function party(word, caption) {
     swarm.partyUntil = performance.now() + 6000;
     setTimeout(() => swarm.setWord(word, caption, 9000), 1800);
