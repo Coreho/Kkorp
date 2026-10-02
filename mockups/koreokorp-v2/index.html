@@ -1,0 +1,1407 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KoreoKorp V2 Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: four full-height panels in a row (Future Workspaces layout); any panel expands, the dark fourth panel is the chat room. Single committed look. */
+:root {
+  color-scheme: dark;
+  --ink: #0b1220;          /* text on light panels */
+  --ink-2: #1e293b;
+  --rule: rgba(11, 18, 32, .28);
+  --p1: #e8ecef;
+  --p2: #dce5ed;
+  --p3: #e5e5e5;
+  --p4: #111111;
+  --night: #0a0a0a;
+  --paper: #ffffff;
+  --live: #3ddc84;
+  --font: "Inter", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --retro: Tahoma, Verdana, "Segoe UI", Geneva, sans-serif;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  /* AIM-style window chrome */
+  --w-face: #d4d0c8;
+  --w-hi: #ffffff;
+  --w-lo: #808080;
+  --w-dk: #404040;
+  --w-title-a: #0a246a;
+  --w-title-b: #a6caf0;
+  --w-self: #c80000;
+  --w-other: #0000c8;
+  --w-bot: #7a1fa2;
+  --w-sys: #555555;
+}
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--night);
+  color: var(--ink);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+* { box-sizing: border-box; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+
+main { display: flex; height: 100%; }
+
+/* ---------- Panels ---------- */
+.panel {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  cursor: pointer;
+  border-right: 1px solid rgba(0, 0, 0, .12);
+  transition: flex-grow .7s var(--ease);
+  animation: rise .9s var(--ease) both;
+}
+.panel:nth-child(2) { animation-delay: .08s; }
+.panel:nth-child(3) { animation-delay: .16s; }
+.panel:nth-child(4) { animation-delay: .24s; border-right: 0; }
+@keyframes rise { from { transform: translateY(28px); } to { transform: none; } }
+
+.bg { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.p1 { background: var(--p1); }
+.p2 { background: var(--p2); }
+.p3 { background: var(--p3); }
+.p1 .bg { background: linear-gradient(var(--p1) 0 34%, rgba(232, 236, 239, 0) 56%), linear-gradient(0deg, var(--p1) 0 56px, rgba(232, 236, 239, 0) 150px); }
+.p2 .bg { background: linear-gradient(var(--p2) 0 34%, rgba(220, 229, 237, 0) 56%), linear-gradient(0deg, var(--p2) 0 56px, rgba(220, 229, 237, 0) 150px); }
+.p3 .bg { background: linear-gradient(var(--p3) 0 34%, rgba(229, 229, 229, 0) 56%), linear-gradient(0deg, var(--p3) 0 56px, rgba(229, 229, 229, 0) 150px); }
+.scene { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; display: block; transition: opacity .5s ease; touch-action: pan-y; }
+.panel.open .scene { opacity: .22; }
+.p2.open .scene { opacity: .6; }
+.p1.open .scene { opacity: 1; }
+.now { margin: 0; font-size: 13px; color: #334155; min-height: 1.4em; }
+.now b { font-weight: 600; color: #0b1220; }
+.about { gap: 24px; max-width: min(560px, 44vw); }
+.about-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; }
+.about h3 { margin: 0 0 10px; font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #0b1220; display: flex; gap: 8px; align-items: center; }
+.ph { font-size: 10px; letter-spacing: .08em; padding: 1px 6px; background: #fef08a; color: #1a1a1a; }
+.tl { list-style: none; margin: 0; padding: 0; display: grid; }
+.tl li { display: grid; grid-template-columns: 3.5em 1fr; gap: 12px; padding: 8px 0; border-top: 1px solid var(--rule); font-size: 14px; line-height: 1.45; color: var(--ink-2); }
+.tl b { font-weight: 600; color: #0b1220; font-variant-numeric: tabular-nums; }
+.links { list-style: none; margin: 0; padding: 0; display: grid; }
+.links li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--rule); font-size: 14px; }
+.links li > span { width: 4.5em; font-size: 12px; font-weight: 600; color: #475569; }
+.links code { font: 13px ui-monospace, Menlo, Consolas, monospace; color: #0b1220; overflow-wrap: anywhere; }
+.copy, .jump, .spell button {
+  font: 600 12px var(--font); cursor: pointer; padding: 6px 10px;
+  background: #0b1220; color: #fff; border: 1px solid #0b1220;
+}
+.copy { background: transparent; color: #0b1220; }
+.copy:hover, .jump:hover, .spell button:hover { background: #6b2a8f; border-color: #6b2a8f; color: #fff; }
+.spell { display: grid; gap: 8px; }
+.spell label { font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #0b1220; }
+.spell-row { display: flex; gap: 8px; max-width: 360px; }
+.spell input {
+  flex: 1; min-width: 0; height: 38px; padding: 0 12px; font: 500 15px var(--font); text-transform: uppercase; letter-spacing: .06em;
+  background: #fff; color: #0b1220; border: 1px solid rgba(11, 18, 32, .35); color-scheme: light;
+}
+.spell input:focus { outline: 2px solid #6b2a8f; outline-offset: 1px; }
+.try { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: #6b2a8f; }
+.p2 .post-list, .p2 .admin-note { position: relative; background: rgba(220, 229, 237, .95); box-shadow: 0 0 0 14px rgba(220, 229, 237, .95); }
+.p4 { color: #fff; }
+.p4 .bg { background: linear-gradient(var(--p4) 0 30%, rgba(17, 17, 17, .4) 70%, var(--night)); }
+.p4 canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.p4 .bg { z-index: 1; pointer-events: none; }
+
+.inner {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: clamp(56px, 11vh, 104px) clamp(24px, 3.4vw, 56px) clamp(28px, 6vh, 56px);
+}
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.p4 .eyebrow { color: #cbd5e1; }
+h2 {
+  margin: 0;
+  font-size: clamp(30px, 2.7vw, 42px);
+  line-height: 1.08;
+  font-weight: 400;
+  letter-spacing: -.025em;
+  text-wrap: balance;
+}
+.blurb {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-width: 34ch;
+}
+.p4 .blurb { color: #e2e8f0; }
+
+.action {
+  margin-top: auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 0 0;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--rule);
+  cursor: pointer;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.p4 .action { border-top-color: rgba(255, 255, 255, .4); color: #fff; }
+.action svg { width: 18px; height: 18px; transition: transform .3s var(--ease); }
+.action:hover svg { transform: translateX(6px); }
+
+/* Resting-state extras */
+.latest {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  background: rgba(255, 255, 255, .78);
+  border: 1px solid rgba(11, 18, 32, .14);
+  max-width: 36ch;
+}
+.latest small { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #475569; }
+.latest strong { font-size: 16px; font-weight: 500; line-height: 1.35; }
+.latest span { font-size: 13px; color: #334155; font-variant-numeric: tabular-nums; }
+
+.tags { display: flex; flex-wrap: wrap; gap: 8px; max-width: 36ch; }
+.tags span {
+  font-size: 12px; font-weight: 500; padding: 6px 10px;
+  border: 1px solid rgba(11, 18, 32, .3); background: rgba(255, 255, 255, .6);
+}
+
+.online { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 500; color: #fff; }
+.online i {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--live);
+  box-shadow: 0 0 0 0 rgba(61, 220, 132, .6); animation: ping 2s infinite;
+}
+@keyframes ping { 70% { box-shadow: 0 0 0 8px rgba(61, 220, 132, 0); } 100% { box-shadow: 0 0 0 0 rgba(61, 220, 132, 0); } }
+.preview {
+  list-style: none; margin: 0; padding: 14px 16px;
+  display: grid; gap: 8px;
+  background: rgba(10, 10, 10, .72);
+  border: 1px solid rgba(255, 255, 255, .16);
+  font-size: 13px; line-height: 1.45; color: #e5e7eb;
+  max-width: 40ch; min-height: 7.8em;
+}
+.preview b { font-weight: 600; color: #fff; }
+.preview .is-bot { color: #d8b4fe; }
+.preview li { overflow-wrap: anywhere; animation: fadein .4s ease; }
+@keyframes fadein { from { transform: translateY(4px); opacity: .3; } to { transform: none; opacity: 1; } }
+
+/* ---------- Expand / collapse ---------- */
+.stack { display: grid; gap: 20px; }
+.col { display: flex; flex-direction: column; gap: 20px; flex: 1; min-height: 0; }
+.detail { display: none; }
+.detail.center { justify-content: center; }
+.tab { display: none; }
+.close {
+  position: absolute; top: 20px; right: 20px; z-index: 5;
+  width: 40px; height: 40px; border-radius: 50%;
+  display: none; place-items: center;
+  background: rgba(255, 255, 255, .7); border: 1px solid var(--rule); cursor: pointer;
+}
+.p4 .close { background: rgba(0, 0, 0, .5); border-color: rgba(255, 255, 255, .4); color: #fff; }
+.close svg { width: 16px; height: 16px; }
+
+.panel.open { flex-grow: 4; cursor: default; }
+.panel.open .rest { display: none; }
+.panel.open .detail { display: flex; }
+.panel.open .close { display: grid; }
+
+.detail { flex-direction: column; gap: 20px; min-height: 0; flex: 1; }
+.post-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; max-width: 62ch; }
+.post-list li { display: grid; grid-template-columns: 7.5em 1fr; gap: 16px; padding: 16px 0; border-top: 1px solid var(--rule); }
+.post-list time { font-size: 13px; color: #475569; font-variant-numeric: tabular-nums; padding-top: 2px; }
+.post-list strong { display: block; font-size: 17px; font-weight: 500; margin-bottom: 4px; }
+.post-list p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--ink-2); }
+.admin-note { font-size: 13px; color: #334155; }
+.admin-note code { font: 13px ui-monospace, Menlo, Consolas, monospace; background: rgba(255, 255, 255, .7); padding: 1px 5px; }
+.proj { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; max-width: 760px; }
+.proj div { background: rgba(255, 255, 255, .8); border: 1px solid rgba(11, 18, 32, .16); padding: 16px; display: grid; gap: 6px; }
+.proj strong { font-weight: 500; font-size: 16px; }
+.proj span { font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.long { margin: 0; font-size: 16px; line-height: 1.65; color: var(--ink-2); max-width: 58ch; }
+
+.saver { position: fixed; inset: 0; z-index: 500; background: #05050a; opacity: 0; transition: opacity .6s ease; cursor: none; }
+.saver.on { opacity: 1; }
+.saver canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.saver-hint {
+  position: absolute; left: 0; right: 0; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); margin: 0; padding: 0 16px;
+  text-align: center; font-size: 12px; letter-spacing: .08em; color: #8b8fa8;
+}
+.saver-hint b { color: #fff; font-variant-numeric: tabular-nums; }
+.saver-corner {
+  position: absolute; left: 0; right: 0; top: 40%; margin: 0; text-align: center; pointer-events: none;
+  font: 900 clamp(40px, 9vw, 120px)/1 "Archivo Black", "Arial Black", Impact, sans-serif; color: #fff; opacity: 0;
+}
+.saver-corner.show { animation: corner 1.6s ease-out; }
+@keyframes corner { 0% { opacity: 0; transform: scale(.6); } 15% { opacity: 1; transform: scale(1.08); } 70% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.02); } }
+.pixelfield { position: fixed; inset: 0; z-index: 60; width: 100%; height: 100%; pointer-events: none; display: block; }
+.sample-tag {
+  position: fixed; left: 12px; top: calc(12px + env(safe-area-inset-top, 0px)); z-index: 200;
+  font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+  padding: 6px 10px; background: #fef08a; color: #1a1a1a; border: 1px solid #1a1a1a;
+}
+
+@media (min-width: 900px) {
+  main.has-open .panel:not(.open) { flex-grow: .34; }
+  main.has-open .panel:not(.open) .inner { display: none; }
+  main.has-open .panel:not(.open) .tab {
+    display: flex; position: absolute; inset: 0; z-index: 3;
+    align-items: flex-start; justify-content: center; padding-top: 48px;
+    writing-mode: vertical-rl; font-size: 20px; font-weight: 500; letter-spacing: -.01em;
+  }
+  main.blog-open .panel:not(.open) { flex-grow: 0; border: 0; }
+  main.blog-open .panel:not(.open) .tab { display: none; }
+  main.has-open .panel:not(.open):hover .tab { text-decoration: underline; text-underline-offset: 6px; }
+}
+
+/* ---------- AIM-style chat window ---------- */
+@keyframes buzz { 10%, 90% { transform: translate(-2px, 1px); } 20%, 80% { transform: translate(4px, -2px); } 30%, 50%, 70% { transform: translate(-6px, 2px); } 40%, 60% { transform: translate(6px, -1px); } }
+.aim.buzz { animation: buzz .5s linear; }
+.aim {
+  position: relative;
+  align-self: center;
+  width: min(820px, 100%);
+  height: min(600px, 100%);
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 3px;
+  background: var(--w-face);
+  color: #000;
+  font: 12px/1.3 var(--retro);
+  box-shadow: inset -1px -1px var(--w-dk), inset 1px 1px var(--w-face), inset -2px -2px var(--w-lo), inset 2px 2px var(--w-hi), 0 30px 80px rgba(0, 0, 0, .6);
+  cursor: default;
+}
+.bevel { box-shadow: inset -1px -1px var(--w-dk), inset 1px 1px var(--w-hi), inset -2px -2px var(--w-lo), inset 2px 2px #dfdfdf; }
+.sunk { box-shadow: inset 1px 1px var(--w-lo), inset -1px -1px var(--w-hi), inset 2px 2px var(--w-dk), inset -2px -2px #dfdfdf; }
+.aim-title {
+  display: flex; align-items: center; gap: 6px; height: 22px; padding: 0 3px 0 5px;
+  background: linear-gradient(90deg, var(--w-title-a), var(--w-title-b));
+  color: #fff; font-weight: 700;
+}
+.aim-title .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aim-title svg { width: 14px; height: 14px; flex: none; }
+.wbtn {
+  width: 18px; height: 16px; padding: 0; border: 0; background: var(--w-face); color: #000;
+  font: 700 11px/1 var(--retro); display: grid; place-items: center; cursor: pointer;
+}
+.wbtn:active { box-shadow: inset 1px 1px var(--w-dk), inset -1px -1px var(--w-hi); }
+.aim-menu { display: flex; gap: 14px; padding: 2px 6px; }
+.aim-menu span::first-letter { text-decoration: underline; }
+.aim-info { display: flex; justify-content: space-between; gap: 8px; padding: 0 6px; font-size: 11px; color: #222; }
+.aim-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 180px; gap: 4px; }
+.aim-log {
+  min-height: 0; overflow-y: auto; background: var(--paper); padding: 8px 10px;
+  font: 13px/1.45 Arial, Helvetica, sans-serif; overflow-wrap: anywhere;
+}
+.aim-log p { margin: 0 0 3px; }
+.sn { font-weight: 700; color: var(--w-other); }
+.sn.self { color: var(--w-self); }
+.sn.bot { color: var(--w-bot); }
+.chip {
+  display: inline-block; margin-left: 4px; padding: 0 3px; vertical-align: 1px;
+  font: 700 9px/13px var(--retro); color: #fff; background: var(--w-bot);
+}
+.sys { color: var(--w-sys); font-style: italic; }
+.aim-buddies { min-height: 0; overflow-y: auto; background: var(--paper); padding: 6px 4px; }
+.aim-buddies h3 { margin: 0 0 4px; font: 700 12px var(--retro); display: flex; align-items: center; gap: 4px; }
+.aim-buddies h3::before { content: ""; border: 4px solid transparent; border-top: 6px solid #000; border-bottom: 0; }
+.aim-buddies ul { list-style: none; margin: 0; padding: 0 0 0 10px; display: grid; gap: 3px; }
+.aim-buddies li { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+.aim-buddies li i { width: 9px; height: 9px; flex: none; background: #f6c800; border: 1px solid #7a6200; }
+.aim-buddies li.bot i { background: #c084fc; border-color: #5b1a86; }
+.aim-buddies li.away { color: #777; font-style: italic; }
+.aim-buddies li.away i { background: #ccc; border-color: #888; }
+.aim-buddies li.me { font-weight: 700; }
+.aim-compose { display: grid; gap: 3px; }
+.aim-tools { display: flex; gap: 3px; padding: 2px; }
+.aim-tools button { height: 22px; min-width: 26px; padding: 0 6px; border: 0; background: var(--w-face); cursor: pointer; font: 700 12px var(--retro); }
+.aim-tools .hint { margin-left: auto; align-self: center; font-size: 11px; color: #333; padding-right: 4px; }
+.aim-row { display: grid; grid-template-columns: 1fr auto; gap: 4px; }
+.aim-row textarea {
+  resize: none; height: 58px; border: 0; padding: 6px 8px; background: var(--paper); color: #000;
+  font: 13px/1.4 Arial, Helvetica, sans-serif; color-scheme: light;
+}
+.aim-row textarea:focus { outline: none; }
+.aim-send {
+  width: 76px; border: 0; background: var(--w-face); cursor: pointer;
+  font: 700 12px var(--retro); display: grid; place-items: center; gap: 2px; padding: 6px 0;
+}
+.aim-send svg { width: 22px; height: 22px; }
+.aim-send:active, .aim-tools button:active { box-shadow: inset 1px 1px var(--w-dk), inset -1px -1px var(--w-hi); }
+.aim-status { height: 20px; padding: 0 6px; display: flex; align-items: center; font-size: 11px; }
+
+.signon {
+  position: absolute; inset: 25px 3px 3px; z-index: 4;
+  display: grid; place-items: center; padding: 16px;
+  background: rgba(212, 208, 200, .94);
+}
+.signon[hidden] { display: none !important; }
+.signon-box { width: min(320px, 100%); background: var(--w-face); padding: 3px; display: grid; gap: 0; }
+.signon-box .aim-title { margin-bottom: 10px; }
+.signon-body { display: grid; gap: 8px; padding: 4px 12px 12px; }
+.signon-body h3 { margin: 0; font: 700 14px var(--retro); }
+.signon-body p { margin: 0; font-size: 12px; line-height: 1.4; }
+.signon-body label { font-weight: 700; }
+.signon-body input {
+  height: 26px; border: 0; padding: 0 6px; background: var(--paper); color: #000; font: 13px Arial, sans-serif; color-scheme: light;
+}
+.signon-body input:focus { outline: 1px dotted #000; outline-offset: -4px; }
+.signon-body .err { color: #b00000; min-height: 1.3em; font-size: 11px; }
+.signon-body button { justify-self: end; height: 26px; padding: 0 18px; border: 0; background: var(--w-face); font: 700 12px var(--retro); cursor: pointer; }
+
+/* ---------- Phone ---------- */
+@media (max-width: 899px) {
+  .p1.open .scene { opacity: .25; }
+  .about { max-width: none; }
+  html, body { height: auto; }
+  main { flex-direction: column; height: auto; }
+  .panel { min-height: 72svh; border-right: 0; border-bottom: 1px solid rgba(0, 0, 0, .12); }
+  .panel.open {
+    position: fixed; inset: 0; z-index: 100; min-height: 0;
+    padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+    overflow-y: auto;
+  }
+  .p4.open { overflow: hidden; }
+  .p4.open .inner { padding: 64px 8px 8px; }
+  .aim { height: 100%; }
+  .aim-body { grid-template-columns: 1fr; }
+  .aim-buddies { display: none; }
+  .aim-tools .hint { display: none; }
+  .post-list li { grid-template-columns: 1fr; gap: 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .panel, .preview li { animation: none; }
+  .online i { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<main id="panels">
+  <!-- 1 -->
+  <section class="panel p1" data-panel="about" aria-label="About KoreoKorp">
+    <div class="bg"></div>
+    <div class="tab">KoreoKorp</div>
+    <button class="close" aria-label="Close panel"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
+    <div class="inner">
+      <div class="eyebrow">KoreoKorp · V2</div>
+      <h2>KoreoKorp</h2>
+      <div class="rest stack">
+        <p class="blurb">A small corner of the internet. Posts, projects, and a chat room you can walk into with nothing but a screen name.</p>
+        <p class="try">Click · hold</p>
+        <p class="now" data-now aria-live="polite"></p>
+      </div>
+      <div class="detail about">
+        <p class="long">KoreoKorp is a small corner of the internet: posts, projects, and a chat room from 2003 living inside a modern website. No accounts, no feed. Pick a name and say hi.</p>
+        <div class="about-grid">
+          <section>
+            <h3>Timeline <span class="ph">placeholder</span></h3>
+            <ol class="tl">
+              <li><b>2003</b><span>Away messages, buddy lists, 56k.</span></li>
+              <li><b>20XX</b><span>KoreoKorp V1 goes up.</span></li>
+              <li><b>2026</b><span>V2: four panels, a blog, and The Lobby.</span></li>
+            </ol>
+          </section>
+          <section>
+            <h3>Find KoreoKorp <span class="ph">placeholder</span></h3>
+            <ul class="links">
+              <li><span>Email</span><code id="mail">you@koreokorp.com</code><button type="button" class="copy" data-copy="mail">Copy</button></li>
+              <li><span>GitHub</span><code>github.com/your-handle</code></li>
+              <li><span>Chat</span><button type="button" class="jump" data-goto="chat">Enter The Lobby →</button></li>
+            </ul>
+          </section>
+        </div>
+        <form class="spell" id="spell">
+          <label for="spellIn">Spell something</label>
+          <div class="spell-row">
+            <input id="spellIn" maxlength="12" autocomplete="off" spellcheck="false" placeholder="Type a word">
+            <button type="submit">Spell it</button>
+          </div>
+          <p class="now" data-now aria-live="polite"></p>
+        </form>
+      </div>
+      <button class="action" data-open><span>About</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></button>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="panel p2" data-panel="blog" aria-label="Blog">
+    <div class="bg"></div>
+    <div class="tab">Blog</div>
+    <button class="close" aria-label="Close panel"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
+    <div class="inner">
+      <div class="eyebrow">Journal</div>
+      <h2>Blog</h2>
+      <div class="rest stack">
+        <p class="blurb">Notes and updates, written from the admin page and published here.</p>
+        <div class="latest">
+          <small>Latest post</small>
+          <strong>Rebuilding KoreoKorp from scratch</strong>
+          <span>Sep 29, 2026 · 4 min read</span>
+        </div>
+      </div>
+      <div class="detail">
+        <ul class="post-list">
+          <li><time datetime="2026-09-29">Sep 29, 2026</time><div><strong>Rebuilding KoreoKorp from scratch</strong><p>Why V2 is Next.js, Supabase and Vercel, and why it still has a chat room.</p></div></li>
+          <li><time datetime="2026-09-12">Sep 12, 2026</time><div><strong>Meet the bots</strong><p>Two AI regulars live in the lobby. They argue so you don't have to.</p></div></li>
+          <li><time datetime="2026-08-30">Aug 30, 2026</time><div><strong>Screen names are back</strong><p>No login, no email. Pick a name and you're in.</p></div></li>
+        </ul>
+        <p class="admin-note">Sample posts. Real ones come from the <code>posts</code> table, written at <code>/admin</code>.</p>
+      </div>
+      <button class="action" data-open><span>Read the blog</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></button>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="panel p3" data-panel="projects" aria-label="Projects">
+    <div class="bg"></div>
+    <div class="tab">Projects</div>
+    <button class="close" aria-label="Close panel"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
+    <div class="inner">
+      <div class="eyebrow">Work</div>
+      <h2>Projects</h2>
+      <div class="rest stack">
+        <p class="blurb">Things being built, tried, and occasionally finished.</p>
+        <div class="tags"><span>Next.js</span><span>Supabase</span><span>Realtime chat</span><span>AI bots</span></div>
+      </div>
+      <div class="detail">
+        <div class="proj">
+          <div><strong>KoreoKorp V2</strong><span>This site. Four panels, one blog, one chat room.</span></div>
+          <div><strong>The Lobby</strong><span>A shared chat room with screen names and two resident bots.</span></div>
+          <div><strong>Placeholder project</strong><span>Swap in a real project, link, or screenshot.</span></div>
+        </div>
+      </div>
+      <button class="action" data-open><span>See projects</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></button>
+    </div>
+  </section>
+
+  <!-- 4: Chat -->
+  <section class="panel p4" data-panel="chat" aria-label="Chat room">
+    <canvas id="dots" aria-hidden="true"></canvas>
+    <div class="bg"></div>
+    <div class="tab">Chat room</div>
+    <button class="close" aria-label="Close chat room"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
+    <div class="inner">
+      <div class="rest col">
+        <div class="eyebrow">The Lobby</div>
+        <h2>Chat room</h2>
+        <p class="blurb">One shared room. Pick a screen name and jump in. Two bots are always here, and they never stop talking.</p>
+        <div class="online"><i></i><span id="onlineCount">5 in the room now</span></div>
+        <ul class="preview" id="preview" aria-live="off"></ul>
+        <button class="action" data-open><span>Enter the room</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></button>
+      </div>
+
+      <div class="detail center">
+        <div class="aim" role="region" aria-label="The Lobby chat window">
+          <div class="aim-title">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="7" fill="#f6c800" stroke="#000" stroke-width="1"/><path d="M5 10.5c1.6 1.4 4.4 1.4 6 0" stroke="#000" stroke-width="1.2" fill="none"/><circle cx="6" cy="6.5" r="1" fill="#000"/><circle cx="10" cy="6.5" r="1" fill="#000"/></svg>
+            <span class="t">The Lobby · KoreoKorp Chat</span>
+            <button class="wbtn bevel" data-close aria-label="Minimize chat">_</button>
+            <button class="wbtn bevel" data-close aria-label="Leave chat room">×</button>
+          </div>
+          <div class="aim-menu" aria-hidden="true"><span>File</span><span>Edit</span><span>People</span><span>Help</span></div>
+          <div class="aim-info"><span id="whoami">Not signed on</span><span id="roomCount">5 people in room</span></div>
+          <div class="aim-body">
+            <div class="aim-log sunk" id="log" aria-live="polite"></div>
+            <aside class="aim-buddies sunk" aria-label="People in room">
+              <h3>In this room (<span id="buddyCount">5</span>)</h3>
+              <ul id="buddies"></ul>
+            </aside>
+          </div>
+          <form class="aim-compose" id="composer">
+            <div class="aim-tools">
+              <button type="button" class="bevel" id="smile" aria-label="Insert smiley">:-)</button>
+              <span class="hint">Enter sends · try /help</span>
+            </div>
+            <div class="aim-row">
+              <textarea id="msg" class="sunk" maxlength="300" placeholder="Type a message…" aria-label="Message"></textarea>
+              <button class="aim-send bevel" type="submit">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12 21 4l-5 16-4-6-9-2z" fill="#f6c800" stroke="#000" stroke-width="1.2" stroke-linejoin="round"/></svg>
+                Send
+              </button>
+            </div>
+          </form>
+          <div class="aim-status sunk" id="status">&nbsp;</div>
+
+          <form class="signon" id="signon">
+            <div class="signon-box bevel">
+              <div class="aim-title"><span class="t">Sign On</span></div>
+              <div class="signon-body">
+                <h3>Pick a screen name</h3>
+                <p>No account needed. This browser remembers it for next time.</p>
+                <label for="sn">Screen name</label>
+                <input id="sn" class="sunk" maxlength="16" autocomplete="off" spellcheck="false" placeholder="e.g. koreo_kid">
+                <div class="err" id="snErr"></div>
+                <button class="bevel" type="submit">Sign On</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="sample-tag">Mockup · sample content</div>
+<div class="saver" id="saver" hidden>
+  <canvas id="saverCanvas" aria-hidden="true"></canvas>
+  <p class="saver-hint">KoreoKorp is resting. Move the mouse or press a key to wake it. · Corners hit: <b id="corners">0</b></p>
+  <p class="saver-corner" id="cornerFlash" aria-live="polite"></p>
+</div>
+
+<script>
+(() => {
+  const main = document.getElementById('panels');
+  const panels = [...main.querySelectorAll('.panel')];
+  const chatPanel = main.querySelector('.p4');
+
+  // ---------- Panels ----------
+  function openPanel(p) {
+    main.classList.add('has-open');
+    main.classList.toggle('blog-open', p.dataset.panel === 'blog');
+    panels.forEach(x => x.classList.toggle('open', x === p));
+    if (p === chatPanel) onChatOpen();
+  }
+  function closePanels() {
+    main.classList.remove('has-open', 'blog-open');
+    panels.forEach(x => x.classList.remove('open'));
+  }
+  panels.forEach(p => {
+    p.addEventListener('click', e => {
+      if (e.target.closest('.close, [data-close]')) return;
+      if (p.dataset.drag) { delete p.dataset.drag; return; }
+      if (!p.classList.contains('open')) openPanel(p);
+    });
+  });
+  main.querySelectorAll('.close, [data-close]').forEach(b =>
+    b.addEventListener('click', e => { e.stopPropagation(); closePanels(); }));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanels(); });
+  main.querySelectorAll('[data-goto]').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation(); openPanel(main.querySelector(`[data-panel="${b.dataset.goto}"]`));
+  }));
+  main.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    const el = document.getElementById(b.dataset.copy), done = () => { b.textContent = 'Copied'; setTimeout(() => { b.textContent = 'Copy'; }, 1600); };
+    navigator.clipboard.writeText(el.textContent).then(done).catch(() => { getSelection().selectAllChildren(el); b.textContent = 'Selected'; });
+  }));
+
+  // ---------- Dot-matrix field (pulses on every message) ----------
+  const cv = document.getElementById('dots');
+  const ctx = cv.getContext('2d');
+  const reduce = false; // scenes always animate (owner's call); CSS still skips the entrance slide
+  let W = 0, H = 0, dpr = 1, pulseAt = -1e9, mx = 0, my = 0, ox = 0, oy = 0;
+  function size() {
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = W * dpr; cv.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (reduce) draw(0);
+  }
+  new ResizeObserver(size).observe(cv);
+  chatPanel.addEventListener('pointermove', e => {
+    const r = chatPanel.getBoundingClientRect();
+    mx = (e.clientX - r.left) / r.width - .5; my = (e.clientY - r.top) / r.height - .5;
+  });
+  function pulse() { pulseAt = performance.now(); if (reduce) draw(0); }
+  function draw(t) {
+    ctx.clearRect(0, 0, W, H);
+    ox += (mx * 14 - ox) * .05; oy += (my * 14 - oy) * .05;
+    const gap = 22, cx = W * .5, cy = H * .78;
+    const age = t - pulseAt, ring = age * .7, fade = Math.max(0, 1 - age / 1800);
+    for (let y = gap / 2; y < H; y += gap) {
+      for (let x = gap / 2; x < W; x += gap) {
+        const d = Math.hypot(x - cx, y - cy);
+        let a = .1 + .06 * Math.sin(t * .0008 + (x + y) * .015);
+        const hit = Math.max(0, 1 - Math.abs(d - ring) / 50) * fade;
+        a += hit * .7;
+        ctx.fillStyle = hit > .05 ? `rgba(61,220,132,${a})` : `rgba(255,255,255,${a})`;
+        ctx.fillRect(x + ox, y + oy, 1.6, 1.6);
+      }
+    }
+  }
+  if (!reduce) (function loop(t) { draw(t); requestAnimationFrame(loop); })(0);
+
+  // ---------- Chat state (scripted for the mockup) ----------
+  const people = [
+    { sn: 'DialUpDan', bot: true },
+    { sn: 'Y2Kpixie', bot: true },
+    { sn: 'moonpie22' },
+    { sn: 'sk8rgrrl_04', away: true },
+    { sn: 'koreo_fan' },
+  ];
+  const isBot = sn => people.some(p => p.sn === sn && p.bot);
+  let me = null;
+  try { const saved = localStorage.getItem('kk_sn'); if (saved) document.getElementById('sn').value = saved; } catch (e) {}
+
+  const BANTER = [
+    ['DialUpDan', 'back in my day this page took 4 minutes to load. and we liked it.'],
+    ['Y2Kpixie', 'dan it loads in like 0.2 seconds now!!! progress!!!'],
+    ['DialUpDan', 'progress is just lag with better marketing.'],
+    ['moonpie22', 'lol'],
+    ['Y2Kpixie', 'brb changing my away message to a song lyric'],
+    ['DialUpDan', 'if anyone needs me I will be defragmenting.'],
+    ['Y2Kpixie', 'who wants to see my glitter gif collection'],
+    ['DialUpDan', 'nobody. nobody wants that.'],
+    ['koreo_fan', 'is there a new blog post yet'],
+    ['Y2Kpixie', 'yes!! rebuilding koreokorp from scratch. go read it!!'],
+    ['DialUpDan', 'someone typed in all caps earlier. I am still recovering.'],
+    ['Y2Kpixie', 'ok but who is in everyone’s top 8 this week'],
+  ];
+  const REPLIES = {
+    Y2Kpixie: ['omg {sn} same!!!', '{sn} that is SO real', 'hiii {sn} :-)', '{sn} you get it'],
+    DialUpDan: ['{sn}. noted.', 'bold of you to say that on a public channel, {sn}.', '{sn}, I have seen worse. not much worse.'],
+  };
+  const QUESTION = 'good question, {sn}. have you tried turning it off and on again?';
+
+  const log = document.getElementById('log');
+  const preview = document.getElementById('preview');
+  const status = document.getElementById('status');
+  const history = [];
+
+  function line(msg) {
+    const p = document.createElement('p');
+    if (msg.sys) { p.className = 'sys'; p.textContent = msg.text; return p; }
+    const b = document.createElement('span');
+    b.className = 'sn' + (msg.self ? ' self' : '') + (isBot(msg.who) ? ' bot' : '');
+    b.textContent = msg.who;
+    p.append(b);
+    if (isBot(msg.who)) { const c = document.createElement('span'); c.className = 'chip'; c.textContent = 'BOT'; p.append(c); }
+    p.append(document.createTextNode(': ' + msg.text));
+    return p;
+  }
+  function renderPreview() {
+    preview.replaceChildren(...history.filter(m => !m.sys).slice(-3).map(m => {
+      const li = document.createElement('li');
+      const b = document.createElement('b');
+      b.textContent = m.who;
+      if (isBot(m.who)) b.className = 'is-bot';
+      li.append(b, document.createTextNode(' ' + m.text));
+      return li;
+    }));
+  }
+  function add(msg) {
+    history.push(msg);
+    const nearBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
+    log.append(line(msg));
+    if (nearBottom || msg.self) log.scrollTop = log.scrollHeight;
+    renderPreview();
+    if (!msg.sys) { pulse(); document.dispatchEvent(new CustomEvent('kk:chat', { detail: { who: msg.who } })); }
+  }
+  function typing(who, cb, ms = 1300) {
+    status.textContent = who + ' is typing…';
+    setTimeout(() => { status.innerHTML = '&nbsp;'; cb(); }, ms);
+  }
+  function renderBuddies() {
+    const ul = document.getElementById('buddies');
+    ul.replaceChildren(...people.map(p => {
+      const li = document.createElement('li');
+      li.className = [p.bot && 'bot', p.away && 'away', p.sn === me && 'me'].filter(Boolean).join(' ');
+      const i = document.createElement('i');
+      li.append(i, document.createTextNode(p.sn + (p.away ? ' (away)' : '')));
+      if (p.bot) { const c = document.createElement('span'); c.className = 'chip'; c.textContent = 'BOT'; li.append(c); }
+      return li;
+    }));
+    const n = people.length;
+    document.getElementById('buddyCount').textContent = n;
+    document.getElementById('roomCount').textContent = n + ' people in room';
+    document.getElementById('onlineCount').textContent = n + ' in the room now';
+    document.dispatchEvent(new CustomEvent('kk:count', { detail: { n } }));
+  }
+
+  // Seed
+  add({ sys: true, text: '*** You are viewing The Lobby.' });
+  BANTER.slice(0, 4).forEach(([who, text]) => add({ who, text }));
+  let bi = 4;
+  renderBuddies();
+  (function tick() {
+    setTimeout(() => {
+      const [who, text] = BANTER[bi++ % BANTER.length];
+      typing(who, () => add({ who, text }));
+      tick();
+    }, 6000 + Math.random() * 5000);
+  })();
+
+  // Sign on
+  const signon = document.getElementById('signon');
+  const snInput = document.getElementById('sn');
+  const snErr = document.getElementById('snErr');
+  function onChatOpen() {
+    setTimeout(() => (me ? document.getElementById('msg') : snInput).focus({ preventScroll: true }), 350);
+    log.scrollTop = log.scrollHeight;
+  }
+  signon.addEventListener('submit', e => {
+    e.preventDefault();
+    const v = snInput.value.trim();
+    if (!/^[A-Za-z0-9_]{3,16}$/.test(v)) { snErr.textContent = 'Use 3 to 16 letters, numbers or underscores.'; return; }
+    if (people.some(p => p.sn.toLowerCase() === v.toLowerCase())) { snErr.textContent = 'That name is already in the room. Try another.'; return; }
+    me = v;
+    try { localStorage.setItem('kk_sn', v); } catch (err) {}
+    signon.hidden = true;
+    people.push({ sn: me });
+    renderBuddies();
+    document.getElementById('whoami').textContent = 'Signed on as ' + me;
+    add({ sys: true, text: '*** ' + me + ' has entered the room.' });
+    document.dispatchEvent(new CustomEvent('kk:join', { detail: { who: me } }));
+    document.getElementById('msg').focus();
+    setTimeout(() => typing('Y2Kpixie', () => add({ who: 'Y2Kpixie', text: 'hiii ' + me + '!!! welcome to the lobby!!!' })), 900);
+    setTimeout(() => typing('DialUpDan', () => add({ who: 'DialUpDan', text: 'welcome, ' + me + '. please wipe your modem on the way in.' })), 4200);
+  });
+
+  // Compose
+  const composer = document.getElementById('composer');
+  const msg = document.getElementById('msg');
+  composer.addEventListener('submit', e => {
+    e.preventDefault();
+    const text = msg.value.trim().slice(0, 300);
+    if (!text || !me) return;
+    msg.value = '';
+    if (text.startsWith('/')) { command(text); return; }
+    const mine = people.find(p => p.sn === me);
+    if (mine && mine.away) { mine.away = false; renderBuddies(); add({ sys: true, text: '*** ' + me + ' is back.' }); }
+    add({ who: me, text, self: true });
+    const bot = Math.random() < .5 ? 'Y2Kpixie' : 'DialUpDan';
+    let reply = text.includes('?') && bot === 'DialUpDan' ? QUESTION : REPLIES[bot][Math.floor(Math.random() * REPLIES[bot].length)];
+    reply = reply.replace('{sn}', me);
+    setTimeout(() => typing(bot, () => add({ who: bot, text: reply })), 700);
+  });
+  // Slash commands reach out of the chat window and change the rest of the site.
+  const say = (bot, text, ms = 900) => setTimeout(() => typing(bot, () => add({ who: bot, text })), ms);
+  const aimWin = document.querySelector('.aim');
+  function command(text) {
+    const [cmd, ...rest] = text.slice(1).split(' ');
+    const arg = rest.join(' ').trim();
+    switch (cmd.toLowerCase()) {
+      case 'help':
+        add({ sys: true, text: '*** Commands: /spell WORD · /party · /buzz · /away MESSAGE · /screensaver' });
+        break;
+      case 'spell':
+        if (!arg) { add({ sys: true, text: '*** Usage: /spell WORD (up to 12 letters)' }); break; }
+        document.dispatchEvent(new CustomEvent('kk:spell', { detail: { text: arg } }));
+        add({ sys: true, text: '*** ' + me + ' spelled "' + arg.slice(0, 12).toUpperCase() + '" on the front page.' });
+        say('Y2Kpixie', 'omg ' + me + ' it\u2019s on the HOMEPAGE!!!');
+        break;
+      case 'party':
+        document.dispatchEvent(new CustomEvent('kk:party'));
+        add({ sys: true, text: '*** ' + me + ' started a party on the front page.' });
+        say('DialUpDan', 'my eyes.', 1400);
+        break;
+      case 'buzz':
+        aimWin.classList.remove('buzz'); void aimWin.offsetWidth; aimWin.classList.add('buzz');
+        add({ sys: true, text: '*** ' + me + ' sent a buzz!' });
+        say('DialUpDan', 'do not buzz me, ' + me + '.');
+        break;
+      case 'away': {
+        const mine = people.find(p => p.sn === me);
+        if (mine) mine.away = true;
+        renderBuddies();
+        add({ sys: true, text: '*** ' + me + ' is away: ' + (arg || 'brb') });
+        say('Y2Kpixie', 'love the away message!!!', 1200);
+        break;
+      }
+      case 'screensaver':
+        add({ sys: true, text: '*** Starting the screensaver. Move the mouse to come back.' });
+        setTimeout(() => window.kkScreensaver && window.kkScreensaver(), 500);
+        break;
+      default:
+        add({ sys: true, text: '*** Unknown command /' + cmd + '. Type /help.' });
+    }
+  }
+  msg.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); composer.requestSubmit(); }
+  });
+  document.getElementById('smile').addEventListener('click', () => {
+    msg.setRangeText(' :-) ', msg.selectionStart, msg.selectionEnd, 'end');
+    msg.focus();
+  });
+
+})();
+</script>
+
+<script>
+// ---------- Panel scenes: one canvas per light panel ----------
+(() => {
+  const reduce = false; // scenes always animate (owner's call); CSS still skips the entrance slide
+  const INK = 'rgba(11, 18, 32, ';
+
+  function mount(panel, scene) {
+    const cv = document.createElement('canvas');
+    cv.className = 'scene';
+    cv.setAttribute('aria-hidden', 'true');
+    panel.prepend(cv);
+    const ctx = cv.getContext('2d');
+    const st = { W: 0, H: 0, px: -1, py: -1, inside: false, visible: true, downX: 0, downY: 0 };
+    const redraw = () => scene.draw(ctx, st, performance.now());
+    new ResizeObserver(() => {
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      st.W = cv.clientWidth; st.H = cv.clientHeight;
+      cv.width = Math.round(st.W * dpr); cv.height = Math.round(st.H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      scene.resize(st);
+      if (reduce) redraw();
+    }).observe(cv);
+    new IntersectionObserver(([e]) => { st.visible = e.isIntersecting; }).observe(cv);
+    const local = e => { const r = cv.getBoundingClientRect(); st.px = e.clientX - r.left; st.py = e.clientY - r.top; };
+    panel.addEventListener('pointermove', e => { local(e); st.inside = true; if (reduce) redraw(); });
+    // Only count the pointer as gone when it lands on another part of the page. A leave with no
+    // relatedTarget (host overlay, pointer left the window, idle pointer) keeps the current state.
+    panel.addEventListener('pointerleave', e => { if (e.relatedTarget) st.inside = false; scene.up && scene.up(st); });
+    document.addEventListener('pointermove', e => { if (!panel.contains(e.target)) st.inside = false; });
+    panel.addEventListener('pointerdown', e => {
+      delete panel.dataset.drag;
+      local(e); st.downX = e.clientX; st.downY = e.clientY;
+      scene.down && scene.down(st);
+    });
+    panel.addEventListener('pointerup', e => {
+      const moved = Math.hypot(e.clientX - st.downX, e.clientY - st.downY) > 6;
+      if (moved) panel.dataset.drag = '1';
+      if (!moved && scene.tap && !e.target.closest('button, input, textarea, a, label, form')) scene.tap(st, performance.now());
+      scene.up && scene.up(st);
+      if (reduce) redraw();
+    });
+    return t => {
+      if (!st.inside && panel.matches(':hover')) st.inside = true; // pointer already resting here on load
+      st.open = panel.classList.contains('open');
+      if (st.visible && st.W > 140) scene.draw(ctx, st, t);
+    };
+  }
+
+  // 1 · One set of pixels for the whole site. The same 2,400 pixels form the KoreoKorp wordmark on the home
+  // screen, fly across panel borders to form each opened panel's word, march around the chat window, and carry
+  // every chat message into the room. Nothing is created or destroyed; the pixels only rearrange.
+  const swarm = (() => {
+    const N = 2400;
+    const mainEl = document.getElementById('panels');
+    const p1 = mainEl.querySelector('.p1');
+    const cv = document.createElement('canvas');
+    cv.className = 'pixelfield';
+    cv.setAttribute('aria-hidden', 'true');
+    document.body.append(cv);
+    const ctx = cv.getContext('2d');
+    let VW = 0, VH = 0;
+    function fit() {
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      VW = innerWidth; VH = innerHeight;
+      cv.width = VW * dpr; cv.height = VH * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    fit();
+    addEventListener('resize', fit);
+
+    const ps = [];
+    for (let i = 0; i < N; i++) ps.push({ x: Math.random() * VW, y: Math.random() * VH, vx: 0, vy: 0, k: i, go: 0, hx: 0, hy: 0, lx: VW / 2, ly: VH / 2, pk: null });
+
+    const S = {
+      word: 'KOREO\nKORP', wi: 0, holdUntil: 0, partyUntil: 0, speaker: 'Y2Kpixie', online: 5,
+      lastInteract: 0, pendingMorph: 0, pendingSame: false,
+      // Idle rotation on the home wordmark. Live entries read the chat room.
+      cycle: [
+        () => ['KOREO\nKORP', 'Click it. It builds itself back.'],
+        () => [this_.speaker.toUpperCase(), `<b>${esc(this_.speaker)}</b> spoke last in The Lobby`],
+        () => [`${this_.online}\nONLINE`, 'People in The Lobby right now'],
+        () => ['SAY\nHI', 'The chat room is always open'],
+        () => [':-)', 'Classic.'],
+        () => ['A/S/L?', 'Please don’t actually answer that.'],
+        () => ['BRB', 'Away message energy'],
+      ],
+      setWord(text, caption, holdMs) {
+        this.word = text;
+        document.querySelectorAll('[data-now]').forEach(el => { el.innerHTML = caption; });
+        if (holdMs) this.holdUntil = performance.now() + holdMs;
+      },
+      morph() { this.wi = (this.wi + 1) % this.cycle.length; const [w, c] = this.cycle[this.wi](); this.setWord(w, c); },
+    };
+
+    // ---- formations: where the pixels should be right now ----
+    function pick() {
+      const open = mainEl.querySelector('.panel.open');
+      const name = open ? open.dataset.panel : 'home';
+      if (name === 'chat') return { key: 'chat', kind: 'frame', el: document.querySelector('.aim'), rest: '#cfd3ff' };
+      if (name === 'blog') return { key: 'blog', kind: 'word', el: open, box: [.54, .09, .93, .29], word: 'BLOG', rest: '#241f5c' };
+      if (name === 'projects') return { key: 'work', kind: 'word', el: open, box: [.6, .63, .95, .86], word: 'WORK', rest: '#241f5c' };
+      const box = name === 'about' ? [.46, .46, .95, .84] : [.07, .46, .93, .84];
+      return { key: name + ':' + S.word, kind: 'word', el: p1, box, word: S.word, rest: '#241f5c', home: true };
+    }
+    function region(f) {
+      const r = f.el.getBoundingClientRect();
+      if (f.kind === 'frame') return r;
+      return { left: r.left + r.width * f.box[0], top: r.top + r.height * f.box[1], width: r.width * (f.box[2] - f.box[0]), height: r.height * (f.box[3] - f.box[1]) };
+    }
+    function sampleWord(f, R) {
+      const rw = Math.max(40, Math.round(R.width)), rh = Math.max(30, Math.round(R.height));
+      const lines = f.word.split('\n');
+      const off = document.createElement('canvas'); off.width = rw; off.height = rh;
+      const c = off.getContext('2d');
+      const face = sz => `900 ${sz}px "Archivo Black", "Arial Black", Impact, Arial, sans-serif`;
+      let fs = rh / lines.length * .82;
+      c.font = face(fs);
+      const widest = Math.max(...lines.map(l => c.measureText(l).width));
+      fs = Math.min(fs, fs * rw / widest);
+      c.font = face(fs); c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#000';
+      c.strokeStyle = '#000'; c.lineWidth = fs * .07; c.lineJoin = 'round';
+      lines.forEach((l, i) => { const ly = rh / 2 + (i - (lines.length - 1) / 2) * fs * .9; c.fillText(l, rw / 2, ly); c.strokeText(l, rw / 2, ly); });
+      const img = c.getImageData(0, 0, rw, rh).data;
+      const gap = Math.max(3, Math.round(fs / 24));
+      const pts = [];
+      for (let y = 0; y < rh; y += gap) for (let x = 0; x < rw; x += gap) if (img[(y * rw + x) * 4 + 3] > 128) pts.push(x / rw, y / rh);
+      f.pts = pts.length ? pts : [.5, .5];
+      f.n = f.pts.length / 2; f.sw = rw; f.sh = rh; f.gap = gap;
+    }
+    function assign(f, t) {
+      const n = f.kind === 'frame' ? N : f.n;
+      const order = [...Array(n).keys()];
+      for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+      ps.forEach((p, i) => { p.hx = p.lx; p.hy = p.ly; p.go = t + Math.random() * 520; p.k = f.kind === 'frame' ? i : order[i % n]; });
+    }
+    function perimeter(r, e, s) {
+      const x0 = Math.max(3, r.left - e), y0 = Math.max(3, r.top - e), x1 = Math.min(VW - 3, r.right + e), y1 = Math.min(VH - 3, r.bottom + e);
+      const w = x1 - x0, h = y1 - y0, d = s * 2 * (w + h);
+      if (d < w) return [x0 + d, y0];
+      if (d < w + h) return [x1, y0 + d - w];
+      if (d < 2 * w + h) return [x1 - (d - w - h), y1];
+      return [x0, y1 - (d - 2 * w - h)];
+    }
+
+    // ---- pointer: click blasts the home wordmark, holding swirls it. No hover effect. ----
+    let holding = false, hx = 0, hy = 0, downX = 0, downY = 0;
+    const interactive = e => e.target.closest('button, input, textarea, a, label, form, .aim');
+    p1.addEventListener('pointerdown', e => { if (interactive(e)) return; holding = true; hx = downX = e.clientX; hy = downY = e.clientY; S.lastInteract = performance.now(); });
+    document.addEventListener('pointermove', e => { if (holding) { hx = e.clientX; hy = e.clientY; } });
+    document.addEventListener('pointerup', e => {
+      if (!holding) return;
+      holding = false;
+      if (Math.hypot(e.clientX - downX, e.clientY - downY) > 6) return;
+      const t = performance.now();
+      for (const p of ps) {
+        const dx = p.x - e.clientX, dy = p.y - e.clientY, d = Math.hypot(dx, dy) || 1;
+        if (d < 300) { const f = (1 - d / 300) * 22; p.vx += dx / d * f; p.vy += dy / d * f; }
+      }
+      S.pendingMorph = t + 260; S.pendingSame = t < S.holdUntil; S.lastInteract = t;
+    });
+
+    // ---- every chat message is carried in by a few pixels ----
+    document.addEventListener('kk:chat', () => {
+      const open = mainEl.querySelector('.panel.open');
+      const target = !open ? document.querySelector('#preview li:last-child')
+        : open.dataset.panel === 'chat' ? document.querySelector('#log p:last-child') : null;
+      if (!target) return;
+      const r = target.getBoundingClientRect();
+      if (!r.width || r.bottom < 0 || r.top > VH) return;
+      const t = performance.now();
+      for (let j = 0; j < 30; j++) {
+        const p = ps[Math.floor(Math.random() * N)];
+        p.pk = { x: r.left + Math.random() * Math.min(r.width, 180), y: r.top + r.height * (.2 + Math.random() * .6), until: t + 1200 + Math.random() * 300 };
+      }
+    });
+
+    let form = null, lastSample = 0;
+    function frame(t) {
+      requestAnimationFrame(frame);
+      const f2 = pick();
+      if (!form || f2.key !== form.key) {
+        form = f2;
+        if (form.kind === 'word') sampleWord(form, region(form));
+        assign(form, t);
+        lastSample = t;
+      } else form.el = f2.el;
+      if (!form.el) return;
+      const R = region(form);
+      if (form.kind === 'word' && t - lastSample > 200 && (Math.abs(R.width - form.sw) > form.sw * .08 || Math.abs(R.height - form.sh) > form.sh * .08)) {
+        sampleWord(form, R); lastSample = t;
+        // spread the pixels over the new sample so every part of the letters is covered
+        const order = [...Array(form.n).keys()];
+        for (let i = form.n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+        ps.forEach((p, i) => { p.k = order[i % form.n]; });
+      }
+      if (form.home) {
+        if (S.pendingMorph && t > S.pendingMorph) { S.pendingMorph = 0; if (S.pendingSame) { sampleWord(form, R); assign(form, t - 600); } else S.morph(); }
+        if (t - S.lastInteract > 9000 && t > S.holdUntil) { S.lastInteract = t; S.morph(); }
+      }
+      const party = t < S.partyUntil, falling = t < S.partyUntil - 4200;
+      ctx.clearRect(0, 0, VW, VH);
+      const rest = [], mid = [], fast = [], pks = [];
+      for (let i = 0; i < N; i++) {
+        const p = ps[i];
+        let tx, ty;
+        if (p.pk && t < p.pk.until) { tx = p.pk.x; ty = p.pk.y; }
+        else {
+          p.pk = null;
+          if (form.kind === 'frame') {
+            const ring = i % 3;
+            [tx, ty] = perimeter(R, 7 + ring * 4, ((i - ring) / N + t * .000012 * (ring % 2 ? -1 : 1) + 1) % 1);
+          } else {
+            const k = p.k % form.n, dup = p.k >= form.n || i >= form.n;
+            tx = R.left + form.pts[k * 2] * R.width + (dup ? ((i * 7919) % 5 - 2) * .6 : 0);
+            ty = R.top + form.pts[k * 2 + 1] * R.height + (dup ? ((i * 104729) % 5 - 2) * .6 : 0);
+            tx += Math.sin(t * .0021 + ty * .045 + tx * .03) * 1.1; ty += Math.cos(t * .0017 + tx * .04 + ty * .02) * 1.1;
+          }
+          p.lx = tx; p.ly = ty;
+          if (t < p.go) { tx = p.hx; ty = p.hy; }
+        }
+        if (falling) {
+          p.vy += .55;
+          if (p.y > VH - 70) { p.y = VH - 70; p.vy *= -.45; p.vx *= .9; }
+        } else {
+          p.vx += (tx - p.x) * .02; p.vy += (ty - p.y) * .02;
+        }
+        if (holding && form.home) {
+          const dx = p.x - hx, dy = p.y - hy, d = Math.hypot(dx, dy) || 1;
+          if (d < 170) { const k = 1 - d / 170; p.vx += (-dy / d * 2.4 - dx / d * .7) * k; p.vy += (dx / d * 2.4 - dy / d * .7) * k; }
+        }
+        p.vx *= .86; p.vy *= .86;
+        const sp = Math.hypot(p.vx, p.vy);
+        if (sp > 17) { p.vx *= 17 / sp; p.vy *= 17 / sp; }
+        p.x += p.vx; p.y += p.vy;
+        if (party) continue;
+        (p.pk ? pks : sp < 1.4 ? rest : sp < 6 ? mid : fast).push(p);
+      }
+      if (party) {
+        for (let i = 0; i < N; i++) { const p = ps[i]; ctx.fillStyle = `hsl(${(i * 2.3 + t * .25) % 360}, 90%, 52%)`; ctx.fillRect(p.x - 1.4, p.y - 1.4, 2.8, 2.8); }
+        return;
+      }
+      const sq = (arr, color, size) => { ctx.fillStyle = color; for (const p of arr) ctx.fillRect(p.x - size / 2, p.y - size / 2, size, size); };
+      sq(rest, form.rest, 2.4);
+      sq(mid, '#ff3fbf', 2.6);
+      ctx.lineWidth = 1.6; ctx.lineCap = 'round';
+      ['#14c99a', '#ff3fbf'].forEach((c, h) => {
+        ctx.strokeStyle = c; ctx.beginPath();
+        for (let j = h; j < fast.length; j += 2) { const p = fast[j]; ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx * .7, p.y - p.vy * .7); }
+        ctx.stroke();
+      });
+      sq(pks, '#ff3fbf', 3);
+    }
+    if (document.fonts) document.fonts.load('40px "Archivo Black"').then(() => { if (form) form.key = ''; }).catch(() => {});
+    requestAnimationFrame(frame);
+    return S;
+  })();
+
+  const this_ = swarm;
+  const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  document.querySelectorAll('[data-now]').forEach(el => { el.innerHTML = swarm.cycle[0]()[1]; });
+  document.addEventListener('kk:chat', e => { swarm.speaker = e.detail.who; });
+  document.addEventListener('kk:count', e => { swarm.online = e.detail.n; });
+  document.addEventListener('kk:join', e => { swarm.setWord('HI\n' + e.detail.who.toUpperCase(), `Welcome to The Lobby, <b>${esc(e.detail.who)}</b>`, 12000); });
+  // Spell something
+  const spell = document.getElementById('spell'), spellIn = document.getElementById('spellIn');
+  spell.addEventListener('click', e => e.stopPropagation());
+  function spellWord(raw, caption) {
+    let v = raw.toUpperCase().replace(/[^A-Z0-9 !?:\-)(/.'&]/g, '').trim().slice(0, 12);
+    if (!v) return;
+    if (v.length > 6 && v.includes(' ')) { const i = v.lastIndexOf(' ', Math.ceil(v.length / 2) + 1); v = v.slice(0, i) + '\n' + v.slice(i + 1); }
+    swarm.setWord(v, caption ? caption(esc(v.replace('\n', ' '))) : `Spelling <b>${esc(v.replace('\n', ' '))}</b>. Click it to blast it apart.`, 20000);
+  }
+  spell.addEventListener('submit', e => { e.preventDefault(); spellWord(spellIn.value); spellIn.select(); });
+  document.addEventListener('kk:spell', e => spellWord(e.detail.text, w => `<b>${w}</b>, sent from The Lobby with /spell`));
+  function party(word, caption) {
+    swarm.partyUntil = performance.now() + 6000;
+    setTimeout(() => swarm.setWord(word, caption, 9000), 1800);
+  }
+  document.addEventListener('kk:party', () => party('PARTY\nTIME', 'Someone typed <b>/party</b> in The Lobby'));
+  // Secret: the Konami code makes everything fall, then rebuild in rainbow.
+  const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+  let kpos = 0;
+  document.addEventListener('keydown', e => {
+    if (e.target.closest && e.target.closest('input, textarea')) return;
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    kpos = k === KONAMI[kpos] ? kpos + 1 : (k === KONAMI[0] ? 1 : 0);
+    if (kpos === KONAMI.length) {
+      kpos = 0;
+      party('YOU\nFOUND IT', 'Secret unlocked. \u2191\u2191\u2193\u2193\u2190\u2192\u2190\u2192 B A');
+    }
+  });
+
+  // 2 · Blog: a page that keeps writing itself and cascades nonstop while hovered; the pointer leaves a highlighter trail. A tap starts a new heading.
+  const page = {
+    lineH: 24, rows: [], scroll: 0, scrollTo: 0, base: 0, last: 0, wait: 0, boostUntil: 0, W: 0, nextHeading: false, flow: 0,
+    makeRow(heading) {
+      const words = [], max = this.W - this.margin * 2, end = max * (heading ? .55 : .72 + Math.random() * .28);
+      let x = 0;
+      while (true) {
+        const w = heading ? 34 + Math.random() * 56 : 12 + Math.random() * 50;
+        if (x + w > end && words.length > 1) break;
+        words.push({ x, w, hl: 0, dx: 0 });
+        x += w + 8;
+      }
+      return { words, heading, shown: 0 };
+    },
+    resize(st) {
+      const oldUse = this.W - this.margin * 2, oldH = this.H;
+      this.margin = Math.max(28, st.W * .1);
+      if (this.W === st.W && this.H === st.H) return;
+      const first = !this.W;
+      this.W = st.W; this.H = st.H;
+      if (first) {
+        const count = Math.ceil(st.H * .6 / this.lineH);
+        for (let k = 0; k < count; k++) { const r = this.makeRow(k % 7 === 0); r.shown = r.words.length; this.rows.push(r); }
+        this.rows.push(this.makeRow(false));
+        this.base = st.H - 96 - (this.rows.length - 1) * this.lineH;
+        return;
+      }
+      const f = (st.W - this.margin * 2) / oldUse;
+      for (const r of this.rows) for (const w of r.words) { w.x *= f; w.w *= f; }
+      this.base += st.H - oldH;
+    },
+    tap(st, t) { this.nextHeading = true; this.boostUntil = t + 1600; },
+    draw(ctx, st, t) {
+      const { W, H } = st;
+      const dt = Math.min(50, t - (this.last || t)); this.last = t;
+      ctx.clearRect(0, 0, W, H);
+      // Hovering turns the page into a nonstop cascade; leaving eases it back to a calm pace.
+      this.flow += ((st.inside && !st.open ? 1 : 0) - this.flow) * .04;
+      const cur = this.rows[this.rows.length - 1];
+      const speed = (t < this.boostUntil ? 4 : 1) * .0032 * (1 + this.flow * 14);
+      if (cur.shown < cur.words.length) cur.shown = Math.min(cur.words.length, cur.shown + dt * speed);
+      else if ((this.wait += dt) > (st.open ? 0 : 380 * (1 - this.flow)) && this.scrollTo - this.scroll < this.lineH * 1.5) {
+        this.wait = 0;
+        this.rows.push(this.makeRow(this.nextHeading || Math.random() < .08));
+        this.nextHeading = false;
+        this.scrollTo += this.lineH;
+        if (this.rows.length > 80) { this.rows.shift(); this.base += this.lineH; }
+      }
+      const step = st.open ? dt * .01 : Math.max((this.scrollTo - this.scroll) * .08, dt * .16 * this.flow);
+      // Open blog: every so often a short run of words glows yellow, then fades away.
+      if (st.open && t - (this.lastGlow || 0) > 700) {
+        this.lastGlow = t;
+        const vis = this.rows.filter((r, k) => { const y = this.base + k * this.lineH - this.scroll; return y > H * .3 && y < H - 60 && r.shown >= r.words.length; });
+        const r = vis[Math.floor(Math.random() * vis.length)];
+        if (r) {
+          const a = Math.floor(Math.random() * r.words.length), n = 1 + Math.floor(Math.random() * 3);
+          for (let i = a; i < Math.min(r.words.length, a + n); i++) r.words[i].glowAt = t + (i - a) * 180;
+        }
+      }
+      this.scroll = Math.min(this.scrollTo, this.scroll + step);
+      // margin rule
+      ctx.fillStyle = 'rgba(200, 40, 40, .28)';
+      ctx.fillRect(this.margin - 14, H * (st.open ? .3 : .44), 1, H);
+      const x0 = this.margin;
+      this.rows.forEach((r, k) => {
+        const y = this.base + k * this.lineH - this.scroll;
+        if (y < H * (st.open ? .3 : .44) || y > H + 20) return;
+        const full = Math.floor(r.shown), part = r.shown - full;
+        r.words.forEach((w, wi) => {
+          if (wi > full || (wi === full && part === 0)) return;
+          const ww = wi === full ? w.w * part : w.w;
+          const cx = x0 + w.x + w.dx + ww / 2;
+          const d = st.inside ? Math.hypot(cx - st.px, y - st.py) : 999;
+          if (d < 46) w.hl = Math.min(1, w.hl + .2);
+          else w.hl *= .994;
+          const push = d < 60 ? Math.sign(cx - st.px || 1) * (1 - d / 60) * 10 : 0;
+          w.dx += (push - w.dx) * .15;
+          if (w.hl > .02) { ctx.fillStyle = `rgba(253, 224, 71, ${w.hl * .9})`; ctx.fillRect(x0 + w.x + w.dx - 3, y - 8, ww + 6, 16); }
+          if (w.glowAt && t > w.glowAt) {
+            const g = (t - w.glowAt) / 3200;
+            if (g >= 1) w.glowAt = 0;
+            else {
+              const i = Math.sin(Math.PI * g);
+              ctx.save(); ctx.shadowColor = 'rgba(250, 204, 21, .95)'; ctx.shadowBlur = 18 * i;
+              ctx.fillStyle = `rgba(253, 224, 71, ${i * .85})`; ctx.fillRect(x0 + w.x + w.dx - 3, y - 8, ww + 6, 16);
+              ctx.restore();
+            }
+          }
+          ctx.fillStyle = r.heading ? INK + '.78)' : INK + '.3)';
+          const bh = r.heading ? 10 : 6;
+          ctx.beginPath(); ctx.roundRect(x0 + w.x + w.dx, y - bh / 2, ww, bh, bh / 2); ctx.fill();
+        });
+        if (r === cur && Math.floor(t / 450) % 2 === 0) {
+          const lw = r.words[Math.min(full, r.words.length - 1)];
+          const cxp = x0 + (full < r.words.length ? lw.x + lw.w * part : lw.x + lw.w) + 3;
+          ctx.fillStyle = INK + '.85)'; ctx.fillRect(cxp, y - 9, 2, 18);
+        }
+      });
+    },
+  };
+
+  // 3 · Projects: a live node graph with data moving along the links. Drag nodes; tap empty space to add one.
+  const graph = {
+    nodes: [], edges: [], grab: null, hitNode: false,
+    labels: ['Next.js', 'Supabase', 'Vercel', 'Chat', 'Bots', 'Blog', 'Admin'],
+    resize(st) {
+      this.W = st.W; this.H = st.H;
+      if (this.nodes.length) return;
+      for (let k = 0; k < 16; k++) this.nodes.push(this.node(st.W / 2 + (Math.random() - .5) * st.W * .7, st.H * .68 + (Math.random() - .5) * st.H * .3, this.labels[k] || null, 0));
+      for (let k = 1; k < 16; k++) this.edges.push(this.edge(k, Math.floor(Math.random() * k)));
+      for (let k = 0; k < 5; k++) { const a = Math.floor(Math.random() * 16), b = Math.floor(Math.random() * 16); if (a !== b) this.edges.push(this.edge(a, b)); }
+    },
+    node(x, y, label, born) { return { x, y, vx: 0, vy: 0, label, born }; },
+    edge(a, b) { return { a: this.nodes[a], b: this.nodes[b], ph: Math.random() }; },
+    nearest(x, y, r) {
+      let best = null, bd = r;
+      for (const n of this.nodes) { const d = Math.hypot(n.x - x, n.y - y); if (d < bd) { bd = d; best = n; } }
+      return best;
+    },
+    down(st) { this.grab = this.nearest(st.px, st.py, 26); this.hitNode = !!this.grab; },
+    up() { this.grab = null; },
+    tap(st, t) {
+      if (this.hitNode || st.py < st.H * .4) return;
+      const n = this.node(st.px, st.py, null, t);
+      const near = [...this.nodes].sort((p, q) => Math.hypot(p.x - n.x, p.y - n.y) - Math.hypot(q.x - n.x, q.y - n.y)).slice(0, 2);
+      this.nodes.push(n);
+      near.forEach(m => this.edges.push({ a: n, b: m, ph: Math.random() }));
+      if (this.nodes.length > 30) {
+        const old = this.nodes.find(m => !m.label);
+        this.nodes.splice(this.nodes.indexOf(old), 1);
+        this.edges = this.edges.filter(e => e.a !== old && e.b !== old);
+      }
+    },
+    draw(ctx, st, t) {
+      const { W, H } = st, N = this.nodes;
+      const cx = W / 2, cy = H * .68, top = H * .44, bottom = H - 80;
+      for (let i = 0; i < N.length; i++) {
+        const a = N[i];
+        for (let j = i + 1; j < N.length; j++) {
+          const b = N[j]; let dx = a.x - b.x, dy = a.y - b.y;
+          const d2 = Math.max(100, dx * dx + dy * dy), f = 900 / d2, d = Math.sqrt(d2);
+          dx /= d; dy /= d; a.vx += dx * f; a.vy += dy * f; b.vx -= dx * f; b.vy -= dy * f;
+        }
+        a.vx += (cx - a.x) * .0015 + Math.sin(t * .001 + i) * .02;
+        a.vy += (cy - a.y) * .0015 + Math.cos(t * .0012 + i) * .02;
+        if (st.inside && !this.grab) {
+          const d = Math.hypot(a.x - st.px, a.y - st.py);
+          if (d < 80 && d > 0) { a.vx += (a.x - st.px) / d * (1 - d / 80) * .8; a.vy += (a.y - st.py) / d * (1 - d / 80) * .8; }
+        }
+      }
+      for (const e of this.edges) {
+        const dx = e.b.x - e.a.x, dy = e.b.y - e.a.y, d = Math.hypot(dx, dy) || 1, f = (d - 64) * .01;
+        e.a.vx += dx / d * f; e.a.vy += dy / d * f; e.b.vx -= dx / d * f; e.b.vy -= dy / d * f;
+      }
+      for (const n of N) {
+        if (n === this.grab) { n.x = st.px; n.y = st.py; n.vx = n.vy = 0; continue; }
+        n.vx *= .86; n.vy *= .86; n.x += n.vx; n.y += n.vy;
+        n.x = Math.min(W - 20, Math.max(20, n.x)); n.y = Math.min(bottom, Math.max(top, n.y));
+      }
+      ctx.clearRect(0, 0, W, H);
+      ctx.lineWidth = 1; ctx.strokeStyle = INK + '.32)';
+      ctx.beginPath();
+      for (const e of this.edges) { ctx.moveTo(e.a.x, e.a.y); ctx.lineTo(e.b.x, e.b.y); }
+      ctx.stroke();
+      ctx.fillStyle = INK + '.85)';
+      for (const e of this.edges) {
+        const p = (t * .00035 + e.ph) % 1;
+        ctx.fillRect(e.a.x + (e.b.x - e.a.x) * p - 1.5, e.a.y + (e.b.y - e.a.y) * p - 1.5, 3, 3);
+      }
+      ctx.font = '500 11px Inter, Arial, sans-serif'; ctx.textBaseline = 'middle';
+      for (const n of N) {
+        const pop = n.born ? Math.min(1, (t - n.born) / 300) : 1;
+        const hot = n === this.grab || (st.inside && Math.hypot(n.x - st.px, n.y - st.py) < 26);
+        if (n.label) {
+          const w = ctx.measureText(n.label).width + 14;
+          ctx.fillStyle = hot ? '#0b1220' : '#ffffff';
+          ctx.fillRect(n.x - w / 2, n.y - 10, w, 20);
+          ctx.strokeStyle = INK + '.7)'; ctx.strokeRect(n.x - w / 2 + .5, n.y - 9.5, w - 1, 19);
+          ctx.fillStyle = hot ? '#ffffff' : '#0b1220';
+          ctx.fillText(n.label, n.x - w / 2 + 7, n.y + .5);
+        } else {
+          ctx.beginPath(); ctx.arc(n.x, n.y, (hot ? 6 : 4) * pop, 0, Math.PI * 2);
+          ctx.fillStyle = hot ? '#0b1220' : '#ffffff'; ctx.fill();
+          ctx.strokeStyle = INK + '.8)'; ctx.stroke();
+        }
+      }
+    },
+  };
+
+  const ticks = [
+    mount(document.querySelector('.p2'), page),
+    mount(document.querySelector('.p3'), graph),
+  ];
+  if (!reduce) (function loop(t) { ticks.forEach(f => f(t)); requestAnimationFrame(loop); })(performance.now());
+})();
+</script>
+
+<script>
+// ---------- Screensaver: after 25 s idle the wordmark bounces around in the dark ----------
+(() => {
+  const IDLE_MS = 25000;
+  const el = document.getElementById('saver'), cv = document.getElementById('saverCanvas'), ctx = cv.getContext('2d');
+  const cornersEl = document.getElementById('corners'), flash = document.getElementById('cornerFlash');
+  const COLORS = ['#ff3fbf', '#14c99a', '#8b7bff', '#ffd23f', '#ff6b3d', '#3fc5ff'];
+  let on = false, idleTimer = 0, W = 0, H = 0, pts = [], bw = 0, bh = 0, x = 40, y = 40, vx = 2.4, vy = 1.8;
+  let color = 0, corners = 0, last = 0, hitX = -1e9, hitY = -1e9, shownAt = 0;
+
+  function build() {
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    W = innerWidth; H = innerHeight;
+    cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const fs = Math.max(36, Math.min(W * .14, 120));
+    const off = document.createElement('canvas'), c = off.getContext('2d');
+    c.font = `900 ${fs}px "Archivo Black", "Arial Black", Impact, sans-serif`;
+    bw = Math.ceil(c.measureText('KoreoKorp').width) + 8; bh = Math.ceil(fs * 1.15);
+    off.width = bw; off.height = bh;
+    c.font = `900 ${fs}px "Archivo Black", "Arial Black", Impact, sans-serif`;
+    c.textBaseline = 'middle'; c.fillText('KoreoKorp', 4, bh / 2);
+    const img = c.getImageData(0, 0, bw, bh).data, gap = Math.max(3, Math.round(fs / 30));
+    pts = [];
+    for (let py = 0; py < bh; py += gap) for (let px = 0; px < bw; px += gap) if (img[(py * bw + px) * 4 + 3] > 128) pts.push({ ox: px, oy: py, dx: 0, dy: 0, vx: 0, vy: 0 });
+    x = Math.min(x, Math.max(0, W - bw)); y = Math.min(y, Math.max(0, H - bh));
+  }
+  function burst() {
+    for (const p of pts) { const a = Math.random() * Math.PI * 2, f = 4 + Math.random() * 12; p.vx += Math.cos(a) * f; p.vy += Math.sin(a) * f; }
+  }
+  function frame(t) {
+    if (!on) return;
+    requestAnimationFrame(frame);
+    const k = Math.min(3, (t - (last || t)) / 16.7); last = t;
+    x += vx * k; y += vy * k;
+    if (x <= 0 || x + bw >= W) { vx = -vx; x = Math.max(0, Math.min(x, W - bw)); color = (color + 1) % COLORS.length; hitX = t; }
+    if (y <= 0 || y + bh >= H) { vy = -vy; y = Math.max(0, Math.min(y, H - bh)); color = (color + 1) % COLORS.length; hitY = t; }
+    if (Math.abs(hitX - hitY) < 90 && Math.max(hitX, hitY) === t) {
+      corners++; cornersEl.textContent = corners; burst();
+      flash.textContent = corners === 1 ? 'CORNER!' : `CORNER! ×${corners}`;
+      flash.classList.remove('show'); void flash.offsetWidth; flash.classList.add('show');
+    }
+    ctx.fillStyle = 'rgba(5, 5, 10, .3)'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = COLORS[color];
+    for (const p of pts) {
+      p.vx += -p.dx * .04; p.vy += -p.dy * .04; p.vx *= .9; p.vy *= .9; p.dx += p.vx; p.dy += p.vy;
+      ctx.fillRect(x + p.ox + p.dx, y + p.oy + p.dy + Math.sin(t * .003 + p.ox * .05) * 1.2, 2.6, 2.6);
+    }
+  }
+  function start() {
+    if (on) return;
+    on = true; shownAt = performance.now();
+    el.hidden = false; build();
+    ctx.fillStyle = '#05050a'; ctx.fillRect(0, 0, W, H);
+    requestAnimationFrame(() => el.classList.add('on'));
+    last = 0; requestAnimationFrame(frame);
+  }
+  function stop() {
+    if (!on) return;
+    on = false; el.classList.remove('on');
+    setTimeout(() => { if (!on) el.hidden = true; }, 600);
+  }
+  let swallowClick = false;
+  function activity(e) {
+    if (e.type === 'click' && swallowClick) { swallowClick = false; e.preventDefault(); e.stopPropagation(); return; }
+    if (on) {
+      // ignore the tiny jitter right after it appears; swallow the waking click so it doesn't open a panel
+      if (performance.now() - shownAt < 700) return;
+      if (e.type === 'pointerdown') { e.preventDefault(); e.stopPropagation(); swallowClick = true; }
+      stop();
+    }
+    clearTimeout(idleTimer); idleTimer = setTimeout(start, IDLE_MS);
+  }
+  ['pointermove', 'pointerdown', 'click', 'keydown', 'wheel', 'touchstart'].forEach(type =>
+    document.addEventListener(type, activity, { capture: true, passive: type !== 'pointerdown' && type !== 'click' }));
+  addEventListener('resize', () => { if (on) build(); });
+  window.kkScreensaver = start;
+  idleTimer = setTimeout(start, IDLE_MS);
+})();
+</script>
+</body>
+</html>
