@@ -254,6 +254,7 @@ h2 {
 }
 .saver-corner.show { animation: corner 1.6s ease-out; }
 @keyframes corner { 0% { opacity: 0; transform: scale(.6); } 15% { opacity: 1; transform: scale(1.08); } 70% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.02); } }
+.stick { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; display: block; pointer-events: none; }
 .landing {
   position: fixed; inset: 0; z-index: 55;
   background: radial-gradient(120% 90% at 50% 40%, #f4f6f8 0%, var(--p1) 55%, #d9dfe4 100%);
@@ -1475,6 +1476,142 @@ h2 {
   addEventListener('resize', () => { if (on) build(); });
   window.kkScreensaver = start;
   idleTimer = setTimeout(start, IDLE_MS);
+})();
+</script>
+
+<script>
+// ---------- About tab: a stick figure walks in, scratches its head and asks "Koreokorp?" ----------
+(() => {
+  const panel = document.querySelector('.p1');
+  const cv = document.createElement('canvas');
+  cv.className = 'stick';
+  cv.setAttribute('aria-hidden', 'true');
+  panel.append(cv);
+  const ctx = cv.getContext('2d');
+  const LINES = ['Koreokorp?', 'Is that a cereal?', 'Wait, what is this place?', 'Oh! A chat room!'];
+  let W = 0, H = 0, openAt = -1, jumpAt = -1e9, bubbleAt = 0, line = 0, figure = null;
+  new ResizeObserver(() => {
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    W = cv.clientWidth; H = cv.clientHeight;
+    cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }).observe(cv);
+
+  // click the figure: it hops and says the next line
+  panel.addEventListener('click', e => {
+    if (!figure || !panel.classList.contains('open')) return;
+    const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    if (Math.abs(x - figure.x) < figure.h * .35 && y > figure.y - figure.h * 1.05 && y < figure.y + 10) {
+      const t = performance.now();
+      jumpAt = t; line = (line + 1) % LINES.length; bubbleAt = t + 120;
+    }
+  });
+
+  const easeBack = x => { const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+  const lerp = (a, b, k) => a + (b - a) * k;
+  function frame(t) {
+    requestAnimationFrame(frame);
+    const open = panel.classList.contains('open');
+    if (!open) { if (openAt >= 0) { openAt = -1; ctx.clearRect(0, 0, W, H); figure = null; } return; }
+    if (openAt < 0) { openAt = t; line = 0; bubbleAt = t + 1750; jumpAt = -1e9; }
+    if (W < 200) { ctx.clearRect(0, 0, W, H); return; }
+    const narrow = W < 700;
+    const h = Math.min(H * (narrow ? .22 : .36), 270);
+    const standX = W * (narrow ? .78 : .74), footY = H * (narrow ? .9 : .82);
+    const since = t - openAt, walkDur = 1400;
+    const walkP = Math.min(1, since / walkDur), walking = walkP < 1;
+    const x = lerp(W + h * .6, standX, 1 - Math.pow(1 - walkP, 2));
+    // hop
+    const jp = (t - jumpAt) / 520, hop = jp >= 0 && jp < 1 ? Math.sin(Math.PI * jp) * h * .28 : 0;
+    const y = footY - hop;
+    figure = { x, y: footY, h };
+    const lw = Math.max(3, h * .035);
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    ctx.strokeStyle = '#0b1220'; ctx.fillStyle = '#0b1220';
+    ctx.lineWidth = lw; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const phase = since * .012;
+    const breathe = walking ? 0 : Math.sin(t * .003) * h * .008;
+    const hip = [x, y - h * .45], neck = [x, y - h * .8 + breathe], head = [x - h * .01, y - h * .92 + breathe];
+    const look = walking ? 0 : Math.min(1, (since - walkDur) / 400);
+    const tilt = -.25 * look + (jp >= 0 && jp < 1 ? 0 : Math.sin(t * .002) * .04 * look);
+    // shadow
+    ctx.save(); ctx.globalAlpha = .12 * (1 - hop / (h * .4)); ctx.beginPath(); ctx.ellipse(x, footY + lw, h * .2, h * .035, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    // legs
+    const stride = walking ? Math.sin(phase) * h * .17 : (hop ? h * .05 : h * .08);
+    const knee = (s) => [x + s * .55, y - h * .22 - (walking ? Math.abs(Math.sin(phase)) * h * .03 : 0)];
+    ctx.beginPath();
+    ctx.moveTo(...hip); ctx.lineTo(...knee(stride)); ctx.lineTo(x + stride, y);
+    ctx.moveTo(...hip); ctx.lineTo(...knee(-stride)); ctx.lineTo(x - stride, y);
+    // body
+    ctx.moveTo(...hip); ctx.lineTo(...neck);
+    // arms
+    const sh = [x, y - h * .74 + breathe];
+    const swing = walking ? Math.sin(phase + Math.PI) * h * .14 : 0;
+    // left arm (toward the text) hangs or swings
+    ctx.moveTo(...sh); ctx.lineTo(sh[0] - h * .1 - swing * .3, sh[1] + h * .16); ctx.lineTo(sh[0] - h * .12 - swing, sh[1] + h * .3);
+    // right arm: swings while walking, then rises to scratch the head
+    const sc = walking ? 0 : Math.min(1, (since - walkDur) / 350);
+    const scratch = Math.sin(t * .02) * h * .025 * sc;
+    const elbow = [lerp(sh[0] + h * .1 + swing * .3, sh[0] + h * .2, sc), lerp(sh[1] + h * .16, sh[1] - h * .06, sc)];
+    const hand = [lerp(sh[0] + h * .12 + swing, head[0] + h * .09 + scratch, sc), lerp(sh[1] + h * .3, head[1] - h * .07, sc)];
+    ctx.moveTo(...sh); ctx.lineTo(...elbow); ctx.lineTo(...hand);
+    ctx.stroke();
+    // head
+    ctx.save();
+    ctx.translate(...head); ctx.rotate(tilt);
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.arc(0, 0, h * .1, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#0b1220';
+    const eyeY = -h * .012 - look * h * .02, eyeX = -h * .02 * look;
+    const blink = (t % 4200) < 120 ? .2 : 1;
+    ctx.beginPath(); ctx.ellipse(-h * .035 + eyeX, eyeY, h * .011, h * .016 * blink, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(h * .03 + eyeX, eyeY, h * .011, h * .016 * blink, 0, 0, Math.PI * 2); ctx.fill();
+    // mouth: a small "o" while asking
+    ctx.lineWidth = lw * .6;
+    const asking = t > bubbleAt;
+    ctx.beginPath();
+    if (asking) ctx.ellipse(-h * .005 + eyeX, h * .05, h * .016, h * .02, 0, 0, Math.PI * 2);
+    else { ctx.moveTo(-h * .03, h * .05); ctx.lineTo(h * .025, h * .05); }
+    ctx.stroke();
+    ctx.restore();
+    // little question marks floating up while it thinks
+    if (!walking) {
+      ctx.save();
+      ctx.font = `900 ${h * .1}px "Archivo Black", "Arial Black", sans-serif`; ctx.textAlign = 'center';
+      for (let j = 0; j < 2; j++) {
+        const q = ((t * .0006) + j * .5) % 1;
+        ctx.globalAlpha = Math.sin(Math.PI * q) * .5 * look;
+        ctx.fillStyle = j ? '#ff3fbf' : '#6b2a8f';
+        ctx.fillText('?', head[0] + h * (.16 + j * .07), head[1] - h * (.12 + q * .3));
+      }
+      ctx.restore();
+    }
+    ctx.restore();
+    // speech bubble
+    if (asking) {
+      const p = Math.min(1, (t - bubbleAt) / 380), s = easeBack(p);
+      const text = LINES[line], fs = Math.max(14, h * .1);
+      ctx.save();
+      ctx.font = `900 ${fs}px "Archivo Black", "Arial Black", sans-serif`;
+      const tw = ctx.measureText(text).width, bw = tw + fs * 1.3, bh = fs * 2;
+      const bx = Math.max(8 + bw / 2, Math.min(W - 8 - bw / 2, head[0] - h * .25 - bw / 2 + h * .2)), by = head[1] - h * .34;
+      ctx.translate(bx, by); ctx.scale(s, s);
+      ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#0b1220'; ctx.lineWidth = 2.5;
+      ctx.shadowColor = 'rgba(11, 18, 32, .18)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 6;
+      ctx.beginPath(); ctx.roundRect(-bw / 2, -bh / 2, bw, bh, bh / 2); ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.stroke();
+      // tail toward the head
+      const tx = (head[0] - bx) / s, ty = (head[1] - by) / s;
+      ctx.beginPath(); ctx.moveTo(tx * .35 - fs * .45, bh / 2 - 1); ctx.lineTo(tx * .62, ty * .55); ctx.lineTo(tx * .35 + fs * .25, bh / 2 - 1);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(tx * .35 - fs * .43, bh / 2 - 4, fs * .66, 5);
+      ctx.fillStyle = '#0b1220'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(text, 0, fs * .05);
+      ctx.restore();
+    }
+  }
+  requestAnimationFrame(frame);
 })();
 </script>
 </body>
