@@ -1069,21 +1069,15 @@ if (window.CanvasRenderingContext2D && !CanvasRenderingContext2D.prototype.round
       out.forEach(([x, y], i) => { const d = Math.abs(Math.atan2(y, x) + Math.PI / 2) + (y > 0 ? 9 : 0); if (d < bd) { bd = d; best = i; } });
       return out.slice(best).concat(out.slice(0, best));
     }
-    // Stick figure (About): drawn with thick round strokes on a scratch canvas, then its outer edge is traced into
-    // one closed outline so it can morph like the other icons. One hand rests on its chin: it's thinking.
-    const STICK = (() => {
+    // Thought cloud (About): overlapping puffs drawn on a scratch canvas, then the outer edge is traced into one
+    // closed outline so it can morph like the other icons. The two little trailing bubbles are drawn as details.
+    const CLOUD = (() => {
       const S2 = 300, c = document.createElement('canvas'); c.width = c.height = S2;
       const g = c.getContext('2d');
-      g.fillStyle = g.strokeStyle = '#000'; g.lineCap = g.lineJoin = 'round'; g.lineWidth = 24;
-      const head = [150, 64], hr = 40;
-      g.beginPath(); g.arc(head[0], head[1], hr, 0, Math.PI * 2); g.fill();
-      g.beginPath();
-      g.moveTo(150, 100); g.lineTo(150, 192);                       // body
-      g.moveTo(150, 192); g.lineTo(114, 282);                       // legs
-      g.moveTo(150, 192); g.lineTo(186, 282);
-      g.moveTo(150, 130); g.lineTo(104, 200);                       // arm hanging down
-      g.moveTo(150, 130); g.lineTo(200, 152); g.lineTo(178, 108);   // arm up, hand on chin
-      g.stroke();
+      g.fillStyle = '#000';
+      const puffs = [[62, 150, 48], [110, 108, 58], [170, 96, 60], [228, 118, 52], [250, 168, 42], [204, 196, 46], [140, 200, 50], [84, 192, 42]];
+      puffs.forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); });
+      g.beginPath(); g.ellipse(156, 152, 104, 58, 0, 0, Math.PI * 2); g.fill();
       const d = g.getImageData(0, 0, S2, S2).data, on = (x, y) => x >= 0 && y >= 0 && x < S2 && y < S2 && d[(y * S2 + x) * 4 + 3] > 128;
       let sx = -1, sy = -1;
       find: for (let y = 0; y < S2; y++) for (let x = 0; x < S2; x++) if (on(x, y)) { sx = x; sy = y; break find; }
@@ -1099,9 +1093,10 @@ if (window.CanvasRenderingContext2D && !CanvasRenderingContext2D.prototype.round
       pts.forEach(([px, py]) => { x0 = Math.min(x0, px); y0 = Math.min(y0, py); x1 = Math.max(x1, px); y1 = Math.max(y1, py); });
       const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, sc = 2 / Math.max(x1 - x0, y1 - y0);
       const norm = ([px, py]) => [(px - cx) * sc, (py - cy) * sc];
-      return { poly: pts.filter((_, i) => i % 3 === 0).map(norm), head: norm(head), hr: hr * sc };
+      const tail = [[58, 252, 18], [30, 280, 11]].map(([px, py, r]) => [...norm([px, py]), r * sc]);
+      return { poly: pts.filter((_, i) => i % 3 === 0).map(norm), tail, h: (y1 - y0) * sc };
     })();
-    ICONS.stick = STICK.poly;
+    ICONS.cloud = CLOUD.poly;
     const SHAPES = Object.fromEntries(Object.entries(ICONS).map(([k, v]) => [k, resample(v)]));
     // the logo artwork (outside of the outline made transparent) is laid over the blue silhouette once it settles
     const LOGO = { img: new Image(), aspect: 0.2775 };
@@ -1193,34 +1188,20 @@ if (window.CanvasRenderingContext2D && !CanvasRenderingContext2D.prototype.round
           ctx.font = '700 .3px ui-monospace, Menlo, Consolas, monospace';
           ctx.fillText('C:\\>', -.66, -.3);
           if ((t % 1000) < 560) ctx.fillRect(.08, -.38, .2, .08);
-        } else if (B.icon === 'stick') {
-          const [hx, hy] = STICK.head, hr = STICK.hr;
-          // face: eyes glancing up at the thought, small pondering mouth
-          ctx.fillStyle = '#0c0c12';
-          const blink = (t % 3800) < 130 ? .2 : 1;
-          ctx.beginPath(); ctx.ellipse(hx - hr * .32, hy - hr * .18, hr * .1, hr * .15 * blink, 0, 0, TAU); ctx.fill();
-          ctx.beginPath(); ctx.ellipse(hx + hr * .26, hy - hr * .18, hr * .1, hr * .15 * blink, 0, 0, TAU); ctx.fill();
-          ctx.lineWidth = hr * .1; ctx.lineCap = 'round'; ctx.strokeStyle = '#0c0c12';
-          ctx.beginPath(); ctx.moveTo(hx - hr * .2, hy + hr * .42); ctx.quadraticCurveTo(hx, hy + hr * .32, hx + hr * .14, hy + hr * .44); ctx.stroke();
-          // thought cloud above and to the left of the head, with trailing bubbles
-          const bob = Math.sin(t * .0025) * .03, appear = Math.min(1, settled * 1.4);
-          const cxT = hx - .78, cyT = hy - .78 + bob;
-          ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#0c0c12'; ctx.lineWidth = .035;
-          [[hx - .2, hy - .32, .055], [hx - .36, hy - .46, .08]].forEach(([x, y, r], j) => {
-            if (appear > .2 + j * .2) { ctx.beginPath(); ctx.arc(x, y + bob * (j + 1) * .5, r, 0, TAU); ctx.fill(); ctx.stroke(); }
+        } else if (B.icon === 'cloud') {
+          // trailing thought bubbles, popping in one after the other, then the question
+          ctx.fillStyle = rgbStr(B.rgb);
+          CLOUD.tail.forEach(([x, y, r], j) => {
+            const k = Math.max(0, Math.min(1, settled * 2 - j * .4)), bob = Math.sin(t * .003 + j) * .02;
+            if (k > 0) { ctx.beginPath(); ctx.arc(x, y + bob, r * k, 0, TAU); ctx.fill(); }
           });
-          if (appear > .6) {
-            const k = Math.min(1, (appear - .6) / .4);
-            ctx.save(); ctx.translate(cxT, cyT); ctx.scale(k, k);
-            const puffs = [[-.42, .02, .22], [-.18, -.14, .26], [.14, -.14, .26], [.4, .02, .22], [.14, .14, .24], [-.18, .14, .24]];
-            ctx.beginPath(); puffs.forEach(([x, y, r]) => { ctx.moveTo(x + r, y); ctx.arc(x, y, r, 0, TAU); }); ctx.fill();
-            puffs.forEach(([x, y, r]) => { ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.stroke(); });
-            ctx.beginPath(); puffs.forEach(([x, y, r]) => { ctx.moveTo(x + r - .03, y); ctx.arc(x, y, r - .03, 0, TAU); }); ctx.fill();
-            ctx.fillStyle = '#0c0c12'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.font = '900 .2px "Archivo Black", "Arial Black", Impact, sans-serif';
-            ctx.fillText('kkorp?', 0, .01);
-            ctx.restore();
-          }
+          ctx.fillStyle = 'rgba(255, 255, 255, .96)'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          const lines = ['who or what', 'is kkorp?'];
+          ctx.font = '900 .2px "Archivo Black", "Arial Black", Impact, sans-serif';
+          const widest = Math.max(...lines.map(l => ctx.measureText(l).width)), fs = .2 * Math.min(1, 1.42 / widest);
+          ctx.font = `900 ${fs}px "Archivo Black", "Arial Black", Impact, sans-serif`;
+          const lh = fs * 1.15;
+          lines.forEach((l, i) => ctx.fillText(l, 0, (i - .5) * lh + .01));
         } else if (B.icon === 'bubble') {
           for (let j = 0; j < 3; j++) { const hop = Math.max(0, Math.sin(t * .008 - j * .9)) * .12; ctx.beginPath(); ctx.arc(-.45 + j * .45, -.16 - hop, .13, 0, TAU); ctx.fill(); }
         }
@@ -1273,7 +1254,7 @@ if (window.CanvasRenderingContext2D && !CanvasRenderingContext2D.prototype.round
         const r = document.querySelector('.aim').getBoundingClientRect(), size = 96;
         return { icon: 'bubble', rgb: [255, 63, 191], x: Math.max(size / 2 + 8, r.left + 18), y: Math.max(size / 2 + 8, r.top - 30), size };
       }
-      if (!landing && name === 'about') return { icon: 'stick', rgb: [124, 108, 255], ...box(open, VW < 700 ? [.76, .1, .98, .25] : [.64, .4, .93, .9]) };
+      if (!landing && name === 'about') return { icon: 'cloud', rgb: [124, 108, 255], ...box(open, VW < 700 ? [.6, .07, .98, .19] : [.58, .34, .95, .8]) };
       if (!landing && name === 'blog') return { icon: 'page', rgb: [75, 75, 160], ...box(open, VW < 700 ? [.72, .05, .94, .19] : [.62, .07, .9, .31]) };
       if (!landing && name === 'projects') return { icon: 'computer', rgb: [143, 71, 174], ...box(open, [.66, .52, .94, .84]) };
       // nothing to show: tuck back into the logo
