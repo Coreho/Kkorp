@@ -44,7 +44,7 @@ You are building **KoreoKorp V2**, a personal website, as a production web app i
 
 ### 2. Jelly shapes (the signature motion)
 - The logo is drawn on a full-screen canvas as a **solid jelly shape**: a closed outline of ~320 springy vertices that morphs between target outlines. While it moves it is a blue silhouette (`#1F6FE5`); once it settles, the logo artwork fades in exactly on top.
-- Opening Blog, Projects or The Lobby makes a **second jelly shape pop out of the header logo**, fly to the slide and morph into that slide's icon: a page with text lines (Blog), an old computer with a mint screen and blinking `C:\>` (Projects), a pink speech bubble with bouncing typing dots on the chat window's corner (The Lobby). Leaving the slide pulls it back into the logo. About has no pop-up icon.
+- Opening any slide makes a **second jelly shape pop out of the header logo**, fly to the slide and morph into that slide's icon: a thinking stick figure with one hand on its chin and a "kkorp?" thought cloud (About), a page with text lines (Blog), an old computer with a mint screen and blinking `C:\>` (Projects), a pink speech bubble with bouncing typing dots on the chat window's corner (The Lobby). Leaving the slide pulls it back into the logo.
 - Both shapes stretch along their direction of travel and squash across it, wobble when they land, and use time-based physics (speed must not depend on frame rate).
 - Each new chat message sends a small droplet from the header logo to the new message.
 - Port this from the `swarm`/`makeBlob` code in the mockup. Keep the maths; restructure it into typed modules.
