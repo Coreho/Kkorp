@@ -53,7 +53,11 @@ body {
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid #a5b4fc; outline-offset: 2px; }
 
+/* Everything below is fixed-position, so give the page a real in-flow height: hosts that size their
+   frame to the content would otherwise collapse it to nothing and show a blank screen. */
 html, body { overflow: hidden; }
+body { min-height: 100vh; min-height: 100dvh; }
+body::before { content: ""; display: block; height: 100vh; height: 100dvh; }
 .dotfield { position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
 
 /* ---------- Carousel stage ---------- */
@@ -614,6 +618,17 @@ h2 {
   <p class="saver-corner" id="cornerFlash" aria-live="polite"></p>
 </div>
 
+<script>
+// Older browsers (e.g. Safari < 16) lack CanvasRenderingContext2D.roundRect; add a simple version.
+if (window.CanvasRenderingContext2D && !CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+    const rr = Math.max(0, Math.min(Array.isArray(r) ? r[0] || 0 : r || 0, Math.abs(w) / 2, Math.abs(h) / 2));
+    this.moveTo(x + rr, y); this.arcTo(x + w, y, x + w, y + h, rr); this.arcTo(x + w, y + h, x, y + h, rr);
+    this.arcTo(x, y + h, x, y, rr); this.arcTo(x, y, x + w, y, rr); this.closePath();
+    return this;
+  };
+}
+</script>
 <script>
 (() => {
   const main = document.getElementById('panels');
@@ -1286,9 +1301,9 @@ h2 {
     makeRow(heading) {
       const words = [], max = this.W - this.margin * 2, end = max * (heading ? .55 : .72 + Math.random() * .28);
       let x = 0;
-      while (true) {
+      for (let guard = 0; guard < 60; guard++) {
         const w = heading ? 34 + Math.random() * 56 : 12 + Math.random() * 50;
-        if (x + w > end && words.length > 1) break;
+        if (!(x + w <= end) && words.length > 1) break;
         words.push({ x, w, hl: 0, dx: 0 });
         x += w + 8;
       }
