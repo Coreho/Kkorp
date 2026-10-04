@@ -321,7 +321,9 @@ export function useChatRoom() {
             body: '*** Starting the screensaver. Move the mouse to come back.',
             kind: 'system',
           });
-          later(() => setState({ spell: null }), 500);
+          // The screensaver publishes its starter into the store; the prototype
+          // reached for `window.kkScreensaver` here.
+          later(() => getState().startScreensaver?.(), 500);
           break;
         default:
           addLine({
@@ -353,6 +355,7 @@ export function useChatRoom() {
       addLine({ who: '', body: `*** ${me} is back.`, kind: 'system' });
     }
     addLine({ who: me, body: text, kind: 'self' });
+    getState().onChatMessage?.();
 
     const bot = Math.random() < BOT_REPLY_CHANCE ? 'Y2Kpixie' : 'DialUpDan';
     const pool = REPLIES[bot] ?? [];

@@ -62,6 +62,13 @@ export interface SiteState {
   partyUntil: number;
   /** Bumped to replay the buzz animation on the sender's own window. */
   buzzNonce: number;
+  /**
+   * Registered by the Lobby's dot matrix so a new chat line can ripple it.
+   * Null when the canvas engines are not mounted.
+   */
+  onChatMessage: (() => void) | null;
+  /** Registered by the screensaver so `/screensaver` can start it. */
+  startScreensaver: (() => void) | null;
 }
 
 export const initialState: SiteState = {
@@ -74,6 +81,8 @@ export const initialState: SiteState = {
   captionHtml: 'The logo up top takes you back to the start.',
   partyUntil: 0,
   buzzNonce: 0,
+  onChatMessage: null,
+  startScreensaver: null,
 };
 
 type Listener = (state: SiteState) => void;

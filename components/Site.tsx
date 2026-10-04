@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { ChatWindow } from './ChatWindow';
+import {
+  ChatDotsMount,
+  Dotfield,
+  PanelScenes,
+  ScreensaverOverlay,
+} from './CanvasEngines';
 import { JellyLayer } from './JellyLayer';
 import { HomeHit, Landing, Nav } from './Chrome';
 import { AboutBody, BlogBody, ChatRestBody, ProjectsBody } from './Panels';
@@ -50,6 +56,7 @@ export function Site() {
   const caption = useAboutCaption();
   const recent = useRecentChat();
   const [copied, setCopied] = useState(false);
+  const [chatCanvas, setChatCanvas] = useState<HTMLCanvasElement | null>(null);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -177,7 +184,7 @@ export function Site() {
       <Landing entered={entered} onEnter={enterSite} />
       <HomeHit entered={entered} />
       <JellyLayer />
-      <canvas className="dotfield" id="dotfield" aria-hidden="true" />
+      <Dotfield />
 
       <Nav onGo={openByIndex} onStep={step} current={currentIndex} hidden={!entered} />
 
@@ -205,7 +212,7 @@ export function Site() {
         </Panel>
 
         <Panel {...panelProps('chat', 3, 'Chat room', 'Close chat room')}>
-          <canvas id="dots" aria-hidden="true" />
+          <canvas id="dots" aria-hidden="true" ref={setChatCanvas} />
           <Bg />
           <Tab label="The Lobby" />
           <div className="inner">
@@ -221,6 +228,9 @@ export function Site() {
       </main>
 
       <div className="sample-tag">Mockup · sample content</div>
+      <ChatDotsMount canvas={chatCanvas} />
+      <ScreensaverOverlay />
+      <PanelScenes />
     </>
   );
 }
