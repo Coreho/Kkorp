@@ -18,4 +18,7 @@ All content is sample data and the chat room is scripted (no backend yet).
 
 ## Not done yet
 
-Real chat (Supabase Realtime), OpenRouter bots, the `/admin` blog editor, and the Next.js + Vercel build.
+Real chat (Supabase Realtime), OpenRouter bots, the `/admin` blog editor, and the
+production application build. The planned architecture is in
+`docs/production-architecture.md`; the earlier Vercel hosting assumption is
+void — the app deploys to the VPS alongside this prototype.

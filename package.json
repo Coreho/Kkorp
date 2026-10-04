@@ -6,6 +6,10 @@
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "start": "node scripts/serve.mjs",
+    "backlog": "backlog",
+    "backlog:board": "backlog board",
+    "backlog:browser": "backlog browser --no-open",
+    "backlog:check": "backlog doctor",
     "check": "node scripts/check.mjs",
     "test": "npm run check && playwright test",
     "test:e2e": "playwright test",
@@ -15,6 +19,7 @@
     "install:browsers": "playwright install chromium"
   },
   "devDependencies": {
-    "@playwright/test": "1.63.0"
+    "@playwright/test": "1.63.0",
+    "backlog.md": "1.53.0"
   }
 }

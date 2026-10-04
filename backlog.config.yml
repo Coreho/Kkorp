@@ -1,0 +1,22 @@
+project_name: "Kkorp"
+default_status: "To Do"
+statuses: ["To Do", "In Progress", "Done"]
+labels: ["tooling", "documentation", "hosting", "content", "frontend", "animation", "chat", "bots", "blog", "admin", "design", "accessibility", "theme", "security", "cms", "projects"]
+definition_of_done:
+  - Acceptance criteria are verified with recorded evidence.
+  - Relevant checks pass; new interactions have regression coverage, and npm test plus git diff --check pass before committing.
+  - Documentation is updated where behavior or workflow changes, and remaining limitations are recorded.
+date_format: yyyy-mm-dd
+max_column_width: 20
+default_editor: "nano"
+auto_open_browser: false
+default_port: 6420
+remote_operations: true
+auto_commit: false
+filesystem_only: false
+zero_padded_ids: 3
+bypass_git_hooks: false
+check_active_branches: true
+active_branch_days: 30
+task_prefix: "task"
+backlog_directory: "kkorp/backlog.md"

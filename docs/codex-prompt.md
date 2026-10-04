@@ -2,6 +2,14 @@
 
 Copy everything below the line into Codex.
 
+> **Superseded in part.** The hosting and backend decisions below assume Vercel
+> and predate the owner's decision to host koreokorp.com on their own VPS.
+> `docs/production-architecture.md` is authoritative for runtime, hosting,
+> database, auth, deployment and rollback. Treat the Vercel requirement in
+> "Stack (decided, do not change)" as **void** — the site deploys to the VPS,
+> not Vercel. Everything about the site's look, motion and behaviour in this
+> prompt remains current and is still the source of truth.
+
 ---
 
 You are building **KoreoKorp V2**, a personal website, as a production web app in this repository (`Coreho/Kkorp`). The design is finished and lives in a working, clickable mockup. Your job is to turn that mockup into a real Next.js site with a live chat room, AI chat bots and a blog the owner can publish to. Match the mockup's look and motion closely; do not redesign it.

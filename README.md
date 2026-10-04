@@ -22,3 +22,37 @@ npm run test:e2e:ui    # Open Playwright's interactive test runner
 ```
 
 There is no production build step. The deployable site is the static content in `mockups/koreokorp-v2/`. See `docs/codex-vps-deploy-prompt.md` for a copy-ready VPS deployment handoff.
+
+The current site runs at **https://koreokorp.com** on the VPS. See
+[deployment notes](docs/vps-deployment.md) for updates and rollback.
+
+The planned replacement — an owner-editable application on this same VPS — is
+specified in [production architecture](docs/production-architecture.md). It is
+a decision record, not a description of anything running yet.
+
+## Task management
+
+Backlog.md is pinned as a development dependency and installed by `npm ci`.
+Its configuration is `backlog.config.yml`; tasks and drafts live in
+`kkorp/backlog.md/`.
+
+```bash
+npm run backlog -- task list --plain
+npm run backlog:board
+npm run backlog:browser
+npm run backlog:check
+```
+
+The browser interface listens on `127.0.0.1:6420` on the VPS. To use it from
+your computer, leave `npm run backlog:browser` running on the VPS and open an
+SSH tunnel from your computer:
+
+```bash
+ssh -N -L 6420:127.0.0.1:6420 -p 47823 korebear@173.230.140.70
+```
+
+Then open `http://127.0.0.1:6420` on your computer.
+
+Read the [Backlog workflow](docs/backlog-workflow.md) before creating or completing
+tasks. Future feature proposals start as drafts; promoting a draft makes it part
+of the active backlog. Task edits are committed manually with related changes.
