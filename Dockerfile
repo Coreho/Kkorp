@@ -3,6 +3,8 @@
 # Multi-stage so the runtime layer carries only the standalone server and the
 # node_modules Next.js traced for it. Node 22 LTS is pinned to match the existing
 # workflow-board stack on this host, rather than tracking the host's Node 26.
+ARG GIT_REVISION=unknown
+
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -25,6 +27,13 @@ ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     PORT=3000 \
     HOSTNAME=0.0.0.0
+
+# Standard OCI labels. The revision label is what makes a deployed image
+# traceable back to a commit, and what the deploy script records as the
+# rollback target.
+ARG GIT_REVISION
+LABEL org.opencontainers.image.title="KoreoKorp" \
+      org.opencontainers.image.revision="${GIT_REVISION}"
 
 # Run unprivileged. The node image already provides a `node` user.
 RUN addgroup --system --gid 1001 nodejs \
