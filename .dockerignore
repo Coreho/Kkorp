@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+kkorp
+test-results
+playwright-report
+mockups
+docs
+*.log
+.env
+.env.*
+tests
