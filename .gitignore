@@ -6,3 +6,8 @@ blob-report/
 .env
 .env.*
 !.env.example
+
+# Next.js build output and TypeScript incremental state. Generated, never
+# committed: AGENTS.md forbids committing generated output.
+.next/
+*.tsbuildinfo

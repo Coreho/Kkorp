@@ -4,15 +4,18 @@ title: Populate approved About and Project content
 status: To Do
 assignee: []
 created_date: '2026-10-04 03:01'
-updated_date: '2026-10-04 03:15'
+updated_date: '2026-10-04 05:43'
 labels:
   - content
   - frontend
 milestone: m-0
 dependencies:
+  - TASK-002
+  - TASK-009
   - TASK-010
   - TASK-011
   - TASK-012
+  - TASK-018
 documentation:
   - mockups/koreokorp-v2/README.md
   - docs/codex-prompt.md

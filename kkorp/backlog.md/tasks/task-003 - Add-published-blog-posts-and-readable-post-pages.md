@@ -4,13 +4,14 @@ title: Publish the blog index and post pages
 status: To Do
 assignee: []
 created_date: '2026-10-04 03:01'
-updated_date: '2026-10-04 03:15'
+updated_date: '2026-10-04 05:43'
 labels:
   - blog
   - frontend
 milestone: m-0
 dependencies:
   - TASK-002
+  - TASK-018
 documentation:
   - docs/codex-prompt.md
   - mockups/koreokorp-v2/README.md

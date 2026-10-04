@@ -4,13 +4,16 @@ title: Add selectable site themes
 status: To Do
 assignee: []
 created_date: '2026-10-04 03:14'
+updated_date: '2026-10-04 05:43'
 labels:
   - design
   - theme
   - frontend
 milestone: m-0
 dependencies:
+  - TASK-006
   - TASK-007
+  - TASK-018
 priority: medium
 type: feature
 ordinal: 4200

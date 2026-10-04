@@ -4,14 +4,18 @@ title: Add rich project previews to the Projects panel
 status: To Do
 assignee: []
 created_date: '2026-10-04 03:14'
+updated_date: '2026-10-04 05:43'
 labels:
   - projects
   - design
   - frontend
 milestone: m-0
 dependencies:
-  - TASK-012
+  - TASK-002
   - TASK-006
+  - TASK-009
+  - TASK-012
+  - TASK-018
 priority: high
 type: feature
 ordinal: 4000

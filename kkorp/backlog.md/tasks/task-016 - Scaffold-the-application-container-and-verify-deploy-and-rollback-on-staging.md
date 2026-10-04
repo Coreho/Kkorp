@@ -1,0 +1,73 @@
+---
+id: TASK-016
+title: Scaffold the application container and verify deploy and rollback on staging
+status: In Progress
+assignee:
+  - '@codex'
+created_date: '2026-10-04 05:41'
+updated_date: '2026-10-04 06:04'
+labels:
+  - hosting
+  - frontend
+  - tooling
+milestone: m-0
+dependencies:
+  - TASK-002
+references:
+  - mockups/koreokorp-v2/index.html
+  - docs/vps-deployment.md
+documentation:
+  - docs/production-architecture.md
+priority: high
+type: task
+ordinal: 6000
+---
+
+## Description
+
+<!-- SECTION:DESCRIPTION:BEGIN -->
+Stage 1 of the delivery plan in docs/production-architecture.md. The site needs a server runtime before any owner editing is possible, because TASK-009 requires server-enforced authorization and a static export cannot provide it. This stage builds that runtime and proves the release procedure against a throwaway hostname, without touching the live site. Proxy host 9 must keep serving koreokorp.com from koreokorp-web for the whole of this stage; the rehearsal happens on a separate staging proxy host. The prototype remains the visual and behavioural source of truth, so the port must match mockups/koreokorp-v2/index.html rather than reinterpret it.
+<!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [ ] #1 A Next.js App Router application builds with output: 'standalone' and runs in a read-only node:22-alpine Compose service on the external edge network with no published host port.
+- [ ] #2 The container is supervised with a restart policy, init, dropped capabilities, a memory limit, and a health check, and it restarts cleanly after a host reboot.
+- [ ] #3 A separate staging.koreokorp.com proxy host with its own certificate reaches the container, and koreokorp.com continues to serve the static prototype throughout.
+- [ ] #4 The landing, carousel, all four panels, jelly animation, chat, screensaver, and secret match the prototype at desktop and 390px widths.
+- [ ] #5 The deploy script publishes committed HEAD only, builds an image tagged with the commit SHA, and records the previous image for rollback.
+- [ ] #6 Both the image rollback and the static symlink rollback are executed at least once against staging and their commands are documented in docs/vps-deployment.md.
+- [ ] #7 The site builds and runs with no environment variables set, so a fresh clone works offline.
+- [ ] #8 Repository checks, lint, typecheck, build, and the Playwright suite pass against the application, not only the prototype.
+<!-- AC:END -->
+
+## Definition of Done
+<!-- DOD:BEGIN -->
+- [ ] #1 Acceptance criteria are verified with recorded evidence.
+- [ ] #2 Relevant checks pass; new interactions have regression coverage, and npm test plus git diff --check pass before committing.
+- [ ] #3 Documentation is updated where behavior or workflow changes, and remaining limitations are recorded.
+- [ ] #4 Deploy and rollback are rehearsed on staging with recorded output, not just described.
+- [ ] #5 The staging proxy host and any DNS record created are documented for removal.
+<!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Fix the contracts the port must not break: tests/smoke.spec.js pins the title string 'KoreoKorp V2 Mockup', the IDs landing/enter/panels/cnav/signon/composer/saver, data-panel and data-i attributes, the aria-current and aria-hidden toggles, the role names 'Enter KoreoKorp', 'Sections', 'Screen name', 'Sign On', 'Message', and the localStorage key kk_sn. Write these down as a preserved-surface list before touching anything, because the existing suite is the regression net for the whole port.
+2. Scaffold the application: package.json with Next.js 16 App Router, React 19, TypeScript strict, next.config with output: 'standalone', and a Docker multi-stage build on node:22-alpine producing the standalone server. Confirm the resolved Next.js version rather than assuming 16 exists.
+3. Port the prototype stylesheet verbatim into a single global stylesheet, keeping all 29 :root custom properties and both imperatively-set ones (--accent-rgb, --peek) working. Change no colour, radius, spacing or duration: the prototype is the visual source of truth.
+4. Port the markup to server components where static and client components where interactive, preserving every ID, data attribute, aria attribute and role name from step 1 verbatim.
+5. Port behaviour in slices with real teardown, fixing the leaks the research found rather than reproducing them: four uncancellable rAF loops, an uncancellable recursive tick() timer chain, per-panel document-level pointermove listeners, and ~20 listeners with no removeEventListener. AGENTS.md requires cleanup, so this is a defect to fix, not a style preference.
+6. Replace the window globals and CustomEvent bus (kkNav, kkHome, kkScreensaver, kk:chat, kk:count, kk:join, kk:spell, kk:party) with one shared client store so React state is the single source of truth, keeping the kk_sn localStorage read as an effect rather than a module-load write.
+7. Await document.fonts.load before the first canvas draw that measures text. The prototype measures Archivo Black and Montserrat with no font-load wait, so the screensaver point cloud and graph labels are currently sized against a fallback face.
+8. Import the logo as a static asset instead of the inline base64 duplicate, and read the 496-point outline from assets/koreokorp-logo-outline.json instead of the pasted array, so the single copy in assets/ is authoritative.
+9. Rewrite scripts/check.mjs: its panel-order regex, script-tag balance check and required-ID list read HTML text and go dead against JSX. Replace with assertions that work on the built output, and keep the prototype file checked too, since it stays as the rollback target.
+10. Add the Compose service, health endpoint, and extend /opt/stacks/koreokorp/deploy.sh to build a commit-tagged image and record the previous one. Leave proxy host 9 untouched.
+11. Verify with lint, typecheck, build, the Playwright suite against the application, and the no-env-vars offline path. Note as blocked, not passed: AC#3 and AC#6 need the staging.koreokorp.com DNS record, which the owner must create before a certificate can be issued.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Slice 1 complete and verified; the task stays In Progress because the signature canvas engines and the container are not built yet. What works now: the application builds with output:'standalone' on Next.js 16.3.8 / React 19.3.0 / TypeScript strict, and serves the landing, carousel, all four panels, the nav, the chat window and the screensaver placeholder. The port's structural contracts are proven rather than assumed: tests/app/site.spec.js re-runs the prototype suite's assertions against the built app and passes 4/4 with zero console errors, covering the pinned title, the landing/enter/panels/cnav/signon/composer/saver ids, the 'Enter KoreoKorp'/'Sections'/'Screen name'/'Message' role names, aria-current and aria-hidden toggling, the kk_sn localStorage key, the screen-name validation text, the /help output, and 390px no-horizontal-overflow. Architecture decisions taken during the port, all of which fix defects rather than reproduce them: the prototype's five uncancellable rAF loops, its recursive tick() that stored no timer handle, roughly twenty listeners with no removeEventListener, and a per-panel document-level pointermove listener are all replaced by effects that clean up, which AGENTS.md already required. The window globals (kkNav, kkHome, kkScreensaver) and the five CustomEvents (kk:chat, kk:count, kk:join, kk:spell, kk:party) are replaced by one store in lib/store.ts read through useSyncExternalStore. The carousel's layout() arithmetic is preserved exactly but its imperative style writes are now React props, with aria-hidden derived from the same distance value as the transform so the two cannot drift. The carousel's --peek custom property, previously set imperatively on #panels and read by descendants, is now a real style prop. The prototype's per-panel document pointermove listener is gone. ESLint (flat config, since next lint was removed in Next 16) caught a genuine setState-in-effect when restoring the stored screen name; replaced with useSyncExternalStore using a null server snapshot, which is the correct tool for a browser-only store and avoids a hydration mismatch on the sign-on form. next/font self-hosts Montserrat and Archivo Black, and lib/canvas/fonts.ts resolves the installed family names and awaits document.fonts before first draw, fixing a latent bug where measureText sized the screensaver point cloud and graph labels against a fallback face. Two integration bugs found and fixed during the work: playwright.config.js had a recursive testDir that made the prototype suite pick up tests/app and fail against the prototype server, and output:'standalone' does not copy .next/static, so the standalone server served a page with no CSS or JS until scripts/copy-standalone-assets.mjs was added to the build. Verified state: npm run lint clean, npx tsc --noEmit clean, next build clean, npm test passes (3 prototype tests), npm run test:app passes (4 app tests). Known gap, confirmed by screenshot comparison rather than assumed: the canvas engines are not ported, so the landing shows an empty ellipse where the blue jelly logo should be. The unported remainder is the jelly/swarm system (the majority of the prototype's script), the background dotfield, the chat dot matrix, the blog self-writing scene, the projects node graph and the screensaver pixel field, plus the Compose service, health check wiring, deploy script extension and the offline no-env-vars verification. AC#3 and AC#6 remain blocked on the owner creating the staging.koreokorp.com DNS record.
+<!-- SECTION:NOTES:END -->

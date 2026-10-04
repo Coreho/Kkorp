@@ -4,6 +4,7 @@ title: Polish responsive layout and navigation cues
 status: To Do
 assignee: []
 created_date: '2026-10-04 03:15'
+updated_date: '2026-10-04 05:43'
 labels:
   - design
   - frontend
@@ -11,6 +12,7 @@ labels:
 milestone: m-0
 dependencies:
   - TASK-006
+  - TASK-018
 priority: medium
 type: enhancement
 ordinal: 3050

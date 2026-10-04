@@ -4,6 +4,7 @@ title: Add secure owner administration foundation
 status: To Do
 assignee: []
 created_date: '2026-10-04 03:14'
+updated_date: '2026-10-04 05:43'
 labels:
   - admin
   - security
@@ -11,6 +12,7 @@ labels:
 milestone: m-0
 dependencies:
   - TASK-002
+  - TASK-018
 documentation:
   - docs/codex-prompt.md
   - docs/vps-deployment.md

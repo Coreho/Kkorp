@@ -4,6 +4,7 @@ title: Design accessible alternate color schemes
 status: To Do
 assignee: []
 created_date: '2026-10-04 03:14'
+updated_date: '2026-10-04 05:43'
 labels:
   - design
   - theme
@@ -11,6 +12,7 @@ labels:
 milestone: m-0
 dependencies:
   - TASK-006
+  - TASK-018
 documentation:
   - docs/design/meridian-editorial-carousel-DESIGN.md
 priority: medium
