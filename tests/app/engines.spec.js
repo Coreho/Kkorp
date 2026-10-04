@@ -171,3 +171,94 @@ test('the screensaver starts on command, animates, and wakes on input', async ({
 
   expect(errors).toEqual([]);
 });
+test('chat commands and the Konami code reach the front-page caption', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+  page.on('console', (m) => {
+    if (m.type() === 'error') {
+      errors.push(m.text());
+    }
+  });
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Enter KoreoKorp' }).click();
+  await page.locator('[data-i="3"]').click();
+  await page.waitForTimeout(800);
+
+  // The About caption is rendered by React from the store, but driven by the
+  // jelly engine. It is the visible proof that a chat command reached the swarm.
+  const caption = () =>
+    page.locator('.panel[data-panel="about"] .detail .now').first().textContent();
+
+  await page.getByLabel('Screen name').fill('Coupler');
+  await page.getByRole('button', { name: 'Sign On' }).click();
+  await page.waitForTimeout(600);
+  expect(await caption()).toContain('Welcome to The Lobby');
+  expect(await caption()).toContain('Coupler');
+
+  await page.getByLabel('Message').fill('/spell hello');
+  await page.getByLabel('Message').press('Enter');
+  await page.waitForTimeout(800);
+  expect(await caption()).toContain('HELLO');
+
+  // The secret: up up down down left right left right B A.
+  await page.locator('[data-i="0"]').click();
+  await page.waitForTimeout(600);
+  for (const key of [
+    'ArrowUp',
+    'ArrowUp',
+    'ArrowDown',
+    'ArrowDown',
+    'ArrowLeft',
+    'ArrowRight',
+    'ArrowLeft',
+    'ArrowRight',
+    'b',
+    'a',
+  ]) {
+    await page.keyboard.press(key);
+  }
+  await page.waitForTimeout(2500);
+  expect(await caption()).toContain('Secret unlocked');
+
+  expect(errors).toEqual([]);
+});
+
+test('reduced motion holds a still frame but keeps the site usable', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e)));
+
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Enter KoreoKorp' }).click();
+  await page.waitForTimeout(1200);
+
+  const sample = () =>
+    page.evaluate(() => {
+      const canvas = document.querySelector('canvas.pixelfield');
+      const { data } = canvas
+        .getContext('2d')
+        .getImageData(0, 0, canvas.width, canvas.height);
+      let sum = 0;
+      for (let i = 0; i < data.length; i += 997) {
+        sum = (sum * 31 + data[i]) >>> 0;
+      }
+      return sum;
+    });
+
+  // The swarm must still paint something, and must not keep animating.
+  const first = await sample();
+  expect(first).not.toBe(0);
+  await page.waitForTimeout(1500);
+  expect(await sample()).toBe(first);
+
+  // Navigation still repositions the shapes even with motion reduced.
+  await page.locator('[data-i="2"]').click();
+  await page.waitForTimeout(1200);
+  expect(await sample()).not.toBe(first);
+
+  await expect(page.locator('[data-i="2"]')).toHaveAttribute('aria-current', 'true');
+  expect(errors).toEqual([]);
+});

@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
-  PARTY_MS,
-  SPELL_MS,
   addLine,
   getState,
   readStoredScreenName,
@@ -79,6 +77,7 @@ const SCREEN_NAME_PATTERN = /^[A-Za-z0-9_]{3,16}$/;
 const MAX_MESSAGE = 300;
 const BOT_REPLY_CHANCE = 0.5;
 const IDLE_TYPING_MS = 1300;
+const SPEAK_HOLD_MS = 12_000;
 const BANTER_MIN_MS = 6000;
 const BANTER_JITTER_MS = 5000;
 
@@ -132,6 +131,12 @@ export function useChatRoom() {
       pending.clear();
     };
   }, []);
+
+  // The rotating About caption quotes the room count. Kept in an effect rather
+  // than set during render, because it is a side effect on another system.
+  useEffect(() => {
+    getState().swarm?.setOnline(people.length);
+  }, [people.length]);
 
   const isBot = useCallback(
     (sn: string) => people.some((p) => p.sn === sn && p.bot),
@@ -221,6 +226,12 @@ export function useChatRoom() {
         body: `*** ${value} has entered the room.`,
         kind: 'system',
       });
+      // The swarm shows a welcome caption, as it did on `kk:join`.
+      const swarm = getState().swarm;
+      swarm?.holdCaption(
+        `Welcome to The Lobby, <b>${value.replace(/[&<>"']/g, '')}</b>`,
+        SPEAK_HOLD_MS,
+      );
       later(
         () =>
           typing(
@@ -276,22 +287,19 @@ export function useChatRoom() {
             break;
           }
           const word = arg.slice(0, 12);
-          setState({ spell: word });
+          // The swarm owns the front-page caption; the prototype reached it
+          // through a `kk:spell` document event.
+          getState().swarm?.setSpell(word);
           addLine({
             who: '',
             body: `*** ${who} put "${word.toUpperCase()}" on the front page.`,
             kind: 'system',
           });
-          later(
-            () => setState({ spell: null }),
-            SPELL_MS,
-          );
           say('Y2Kpixie', `omg ${who} it’s on the HOMEPAGE!!!`);
           break;
         }
         case 'party':
-          setState({ partyUntil: Date.now() + PARTY_MS });
-          later(() => setState({ partyUntil: 0 }), PARTY_MS);
+          getState().swarm?.party(`Someone typed <b>/party</b> in The Lobby`);
           addLine({
             who: '',
             body: `*** ${who} started a party on the front page.`,
@@ -356,6 +364,9 @@ export function useChatRoom() {
     }
     addLine({ who: me, body: text, kind: 'self' });
     getState().onChatMessage?.();
+    const swarm = getState().swarm;
+    swarm?.setSpeaker(me);
+    swarm?.sendDropletToLatest();
 
     const bot = Math.random() < BOT_REPLY_CHANCE ? 'Y2Kpixie' : 'DialUpDan';
     const pool = REPLIES[bot] ?? [];

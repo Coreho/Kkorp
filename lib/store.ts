@@ -13,6 +13,8 @@
  * re-renders for the slice it reads.
  */
 
+import type { SwarmEffects } from './canvas/jelly/engine';
+
 export type PanelId = 'about' | 'blog' | 'projects' | 'chat';
 
 export const PANEL_ORDER: readonly PanelId[] = [
@@ -69,6 +71,15 @@ export interface SiteState {
   onChatMessage: (() => void) | null;
   /** Registered by the screensaver so `/screensaver` can start it. */
   startScreensaver: (() => void) | null;
+  /**
+   * Registered by the jelly swarm.
+   *
+   * The prototype coupled the chat to the swarm with five document-level
+   * CustomEvents. The swarm's commands are exposed here instead, so `/spell`,
+   * `/party`, the join greeting, the speaker name and the online count still
+   * reach the front page. Null when the swarm is not mounted.
+   */
+  swarm: SwarmEffects | null;
 }
 
 export const initialState: SiteState = {
@@ -83,6 +94,7 @@ export const initialState: SiteState = {
   buzzNonce: 0,
   onChatMessage: null,
   startScreensaver: null,
+  swarm: null,
 };
 
 type Listener = (state: SiteState) => void;

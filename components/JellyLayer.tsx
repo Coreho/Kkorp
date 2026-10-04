@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { mountSwarm, type Swarm } from '@/lib/canvas/jelly/engine';
+import { mountKonami } from '@/lib/canvas/konami';
 import { setState } from '@/lib/store';
 
 /**
@@ -44,10 +45,17 @@ export function JellyLayer() {
     // Publish captions into the store so React renders them. Text is escaped by
     // the engine before it reaches here.
     swarm.effects.setCaptionSink((html) => setState({ captionHtml: html }));
+    // Expose the swarm's commands so the chat and the Konami code can reach it
+    // without a window global.
+    setState({ swarm: swarm.effects });
+
+    const stopKonami = mountKonami((caption) => swarm.effects.party(caption));
 
     return () => {
+      stopKonami();
       swarm.dispose();
       swarmRef.current = null;
+      setState({ swarm: null });
     };
   }, []);
 

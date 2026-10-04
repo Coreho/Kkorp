@@ -50,6 +50,9 @@ const SPELL_HOLD_MS = 20_000;
 const PARTY_SPIN_MS = 6000;
 const PARTY_FALL_MS = 4200;
 const SPEAK_HOLD_MS = 12_000;
+const SPELL_HOLD = 20_000;
+const PARTY_CAPTION_DELAY = 1800;
+const PARTY_CAPTION_HOLD_MS = 9000;
 
 export interface SwarmHost {
   /** The canvas to draw into. Owned by the caller. */
@@ -65,12 +68,23 @@ export interface SwarmHost {
 export interface SwarmEffects {
   /** Splash the logo, e.g. on entering or leaving the site. */
   splash(force: number): void;
-  /** Send a droplet from the logo to a message in the log or preview. */
-  sendDroplet(target: Element | null): void;
+  /**
+   * Send a droplet from the logo to the newest message.
+   *
+   * The target lookup lives here rather than in the chat, because only the
+   * engine knows the canvas geometry the droplet starts from.
+   */
+  sendDropletToLatest(): void;
   /** Hold a caption for a while and bounce the logo. */
   holdCaption(html: string, holdMs: number): void;
   /** Party: rainbow spin, falling, then a caption. */
-  party(word: string, captionHtml: string): void;
+  party(captionHtml: string): void;
+  /** Who spoke last, for the rotating caption. */
+  setSpeaker(name: string): void;
+  /** How many people are in the room, for the rotating caption. */
+  setOnline(count: number): void;
+  /** `/spell WORD`: put a word on the front page for everyone. */
+  setSpell(raw: string): void;
   /** Cycle to the next caption in the rotation. */
   rotateCaption(): void;
   /**
@@ -262,6 +276,8 @@ export function mountSwarm(host: SwarmHost): Swarm {
     };
   }
 
+  const timers = new Set<number>();
+
   function drawFrame(t: number) {
     const k = Math.min(
       MAX_DT_FRAMES,
@@ -395,15 +411,42 @@ export function mountSwarm(host: SwarmHost): Swarm {
     captionSink(captionFor(state.index));
   }
 
-  function party(word: string, captionHtml: string) {
+  function party(captionHtml: string) {
     state.partyUntil = performance.now() + PARTY_SPIN_MS;
-    // Caption arrives after the shapes have fallen and started rebuilding.
-    window.setTimeout(() => holdCaption(captionHtml, SPEAK_HOLD_MS), PARTY_FALL_MS - 2400);
-    holdCaption(word, PARTY_SPIN_MS);
+    // The caption arrives only once the shapes have fallen and started
+    // rebuilding, matching the prototype's delay.
+    const id = window.setTimeout(
+      () => holdCaption(captionHtml, PARTY_CAPTION_HOLD_MS),
+      PARTY_CAPTION_DELAY,
+    );
+    timers.add(id);
   }
 
-  function sendDroplet(target: Element | null) {
-    if (!target || host.landing) {
+  /** `/spell WORD`: hold the word on the front page for everyone. */
+  function setSpell(raw: string) {
+    const cleaned = raw
+      .toUpperCase()
+      .replace(/[^A-Z0-9 !?:\-)(/.'&]/g, '')
+      .trim()
+      .slice(0, 12);
+    if (!cleaned) {
+      return;
+    }
+    const shown = cleaned.replace(/\n/g, ' ');
+    holdCaption(`Someone in The Lobby says <b>${esc(shown)}</b>`, SPELL_HOLD);
+  }
+
+  function sendDropletToLatest() {
+    if (host.landing) {
+      return;
+    }
+    const open = panels.querySelector<HTMLElement>('.panel.open');
+    const target = !open
+      ? document.querySelector('#preview li:last-child')
+      : open.dataset['panel'] === 'chat'
+        ? document.querySelector('#log p:last-child')
+        : null;
+    if (!target) {
       return;
     }
     const r = target.getBoundingClientRect();
@@ -434,9 +477,16 @@ export function mountSwarm(host: SwarmHost): Swarm {
 
   const effects: SwarmEffects = {
     splash: (force) => logoBlob.splash(force),
-    sendDroplet,
+    sendDropletToLatest,
     holdCaption,
     party,
+    setSpeaker: (name) => {
+      state.speaker = name;
+    },
+    setOnline: (count) => {
+      state.online = count;
+    },
+      setSpell,
     rotateCaption,
     setCaptionSink: (sink) => {
       captionSink = sink;
@@ -450,6 +500,10 @@ export function mountSwarm(host: SwarmHost): Swarm {
       cancelAnimationFrame(frame);
       window.removeEventListener('resize', fit);
       stopMotionWatch();
+      for (const id of timers) {
+        window.clearTimeout(id);
+      }
+      timers.clear();
       droplets = [];
     },
   };
