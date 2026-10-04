@@ -179,3 +179,19 @@ backward compatible with the previous release. TASK-017 owns that rule.
   `Referrer-Policy` and `Permissions-Policy` exactly.
 - The local suite passes 4 tests; the TLS suite passes 2 more against staging.
   koreokorp.com was confirmed untouched throughout.
+
+### Application state as of 2026-10-04
+
+Deployed to staging as `0ce8db6c6544` (previous `1c3fcf685852`). All 14
+application tests pass against `https://staging.koreokorp.com` over trusted TLS,
+and the site was checked visually at 1280px and 390px.
+
+All six of the prototype's canvas engines are ported: the jelly swarm, the
+background dot field, the Lobby dot matrix, the Blog's self-writing page, the
+Projects node graph and the idle screensaver, plus the Konami secret. Every
+engine returns a disposer, and the chat reaches the swarm through the store
+rather than a window global.
+
+`npm run check` now validates the application as well as the prototype: the
+selectors the browser suite pins, the stylesheet's custom properties, and a
+rejection of the six dependencies the architecture decision rules out.
