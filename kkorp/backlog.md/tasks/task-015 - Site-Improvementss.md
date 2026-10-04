@@ -1,12 +1,18 @@
 ---
 id: TASK-015
-title: Site Improvementss
+title: Add tactility and depth to the visible layer
 status: To Do
 assignee: []
 created_date: '2026-10-04 03:29'
-labels: []
+updated_date: '2026-10-04 06:55'
+labels:
+  - design
+  - frontend
+  - animation
+  - accessibility
 milestone: m-0
-dependencies: []
+dependencies:
+  - TASK-016
 priority: high
 type: enhancement
 ordinal: 1050
@@ -15,68 +21,58 @@ ordinal: 1050
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-### 1. High-Performance WebGL & Three.js Backgrounds
-Static backgrounds are forgettable. Instead, implement a Three.js scene that reacts to the user's presence.
-* The "Particle Interaction" Effect: Use a canvas that renders a particle field. Use Raycaster to detect the mouse position and have the particles "repel" or "attract" to the cursor.
-* Scroll-Linked 3D Models: Instead of a hero image, use a 3D model (exported as a .glb file) that rotates or transforms as the user scrolls. Use React Three Fiber to bind the model's rotation/scale to the browser's scroll progress (useScroll hook).
-* Example Tool: Use drei, a collection of helpers for React Three Fiber, to easily implement Float, PerspectiveCamera, and Environment lighting to give your 3D assets a high-end, studio-lit look.
+Rewritten after measuring the site rather than reading the original wishlist. The original text is preserved in draft-009 together with the reasoning below.
 
-### 2. Micro-Interactions and "Physics-Based" UI
-The biggest difference between a "standard" site and a "WOW" site is physics. When a user moves an element, it should feel like it has weight and friction.
-* Framer Motion: Use framer-motion for layout transitions. When a user clicks a project, don't just load a new page. Use layoutId to animate the card expanding into a full-screen view. This "morphing" UI is a hallmark of high-end design.
-* Spring Physics: Move away from standard "ease-in-out" transitions. Use spring animations (e.g., transition={{ type: "spring", stiffness: 300, damping: 20 }}) for hover effects, buttons, and modal pop-ups. This makes the site feel "alive."
-* Custom Cursors: Replace the default pointer with a custom cursor element that changes state (e.g., grows or changes color) when it hovers over interactive elements.
+## Why this was rewritten
 
-### 3. Scroll-Driven Storytelling (The "Scrollytelling" Experience)
-Instead of a standard landing page, use GSAP (GreenSock Animation Platform) with the ScrollTrigger plugin to create an immersive narrative.
-* Pinning: "Pin" a section in place while the content inside it cycles through animations.
-* Timeline Scrubbing: Bind the playback of complex animations directly to the scrollbar. As the user scrolls down, elements fade in, rotate, and assemble themselves on screen.
-* Parallax Layers: Use multi-layered SVG or image assets that move at different speeds, creating a sense of depth (2.5D).
+The original proposed Three.js and React Three Fiber backgrounds, GSAP ScrollTrigger scrollytelling, framer-motion layoutId morphing and spring physics, a custom cursor, text-distortion shaders, grain, and variable fonts. Most of it cannot be built on this site as described.
 
-### 4. Advanced Typography and Texture
-* Text Distortion: Use a WebGL shader to create a "liquid" or "wavy" distortion effect on your headings when the user scrolls or hovers.
-* Grain & Noise: Apply a subtle CSS background-image with a noise texture and mix-blend-mode: overlay at low opacity. This adds a "film grain" quality that makes the site feel less "digital" and more "curated."
-* Variable Fonts: Use variable fonts that change weight or width based on the user's scroll depth or movement.
+**The scrollytelling half is inoperative.** The site has no document scroll. `html, body { overflow: hidden }`, `main#panels` is `position: fixed; top: 84px; bottom: 84px`, and every panel is absolutely positioned inside it. Measured on the running site: `scrollHeight === innerHeight`, `canScroll: false`, and a 3000px wheel leaves `window.scrollY === 0`. ScrollTrigger and `useScroll` both read scroll progress, so pinning, timeline scrubbing, scroll-linked 3D rotation and multi-layer parallax all bind to a value that is permanently zero. Delivering them means first rebuilding the layout to be scrollable, which means dismantling the carousel that is the site.
 
-### 5. Technical Implementation Strategy
-To achieve this without destroying your performance scores (Lighthouse), follow this architecture:
+**framer-motion conflicts with the carousel.** Panel geometry is computed in `useCarouselLayout` and applied as `transform` and `width` props. framer-motion owns transforms, and `layoutId` assumes navigation between routes, whereas the panels are siblings in one fixed stage.
 
-1. Framework: Next.js (for optimized image loading and code splitting).
-2. Animation Engine: GSAP is the industry standard for high-performance, frame-perfect animations. It is significantly more performant than CSS transitions for complex sequences.
-3. Loading States: Implement a custom preloader. A high-end site should never show "half-loaded" content. Use a splash screen that displays a loading animation until the heavy assets (3D models, textures) are ready.
-4. Hardware Acceleration: Always trigger GPU acceleration by using transform: translate3d(0,0,0) or will-change properties on elements that animate frequently.
+**The mandated stack contradicts the approved architecture.** docs/production-architecture.md commits to a plain stylesheet ported from the prototype and hand-written canvas engines, and the app now ships that. Adding GSAP, framer-motion and React Three Fiber replaces the animation layer rather than extending it. The site already runs five or more canvas surfaces at 576 KB of client JS on one modest VPS with no CDN, against a Lighthouse 85 floor. A custom cursor was dropped too: it collides with the screensaver's existing `cursor: none` and adds a keyboard-only failure mode.
 
-### Practical "WOW" Code Snippet (Framer Motion Expansion)
-If you have a project card, make it "pop" with this snippet:
+## What "bland" actually is here
 
-import { motion } from "framer-motion";
+The site is not short of decoration. It is short of **response in the visible layer**.
 
-const Card = () => (
-  <motion.div
-    whileHover={{ scale: 1.05, rotate: 1 }}
-    whileTap={{ scale: 0.95 }}
-    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-    style={{ 
-      background: "linear-gradient(135deg, #6e8efb, #a777e3)",
-      borderRadius: "20px", 
-      padding: "2rem" 
-    }}
-  >
-    <h2>Project Title</h2>
-    <p>This card feels physical and responsive.</p>
-  </motion.div>
-);
+All nine pointer-event sites in the prototype drive background canvases: the dotfield drift, the chat dot matrix, the panel scenes, the screensaver's wake, the Konami handler. Nothing that a visitor can see and read reacts to them. Meanwhile the seven hover rules are flat colour changes or 2px nudges on 150-300ms transitions, while the site already demonstrates genuine spring physics in the jelly logo. The chrome and content therefore behave like a different, blander site than the one the canvases are performing.
 
-### Recommendation for koreokorp.com:
-1. Audit the Hero Section: Replace any static text with a GSAP-powered entry animation where letters scramble into place or fade in sequentially.
-2. Add "Magnetic" Buttons: Create buttons that subtly move toward the cursor when it gets close, creating an irresistible urge to click.
-3. Depth: Add a background layer using a low-opacity SVG pattern that moves slightly slower than the foreground content to create a 3D parallax effect
+So this task adds tactility and depth to the layer people actually look at, in the site's own material rather than a generic one: glass that leans, controls with weight, a surface with grain, and motion that respects reduced-motion instead of ignoring it.
+
+## Scope
+
+1. **Magnetic controls.** The section nav and the primary in-panel buttons drift toward the pointer inside a small radius and settle back when it leaves, using the existing `--ease`. Native pointer tracking only.
+2. **Panel parallax.** The current glass panel leans a few degrees toward the pointer and its inner content offsets slightly, so the panel reads as a physical object with depth. Peeking neighbours lean away.
+3. **Grain and vignette.** One low-opacity noise texture over the whole viewport at `mix-blend-mode: overlay`, plus a soft vignette. Pure CSS, no script.
+4. **Nav pill travel.** The active pill slides between items with a weighted curve and squashes slightly in transit, so switching sections has follow-through rather than an instant jump.
+5. **Press feedback.** Buttons depress with a small scale and a collapsing shadow, then release with overshoot.
+6. **Staggered reveal.** Panel content enters in a short sequence when a slide opens, reusing `--ease`, driven by time rather than by layout thrash.
+7. **Make reduced motion real.** The canvas engines hard-code `const reduce = false`, so the `prefers-reduced-motion` block only affects CSS. Continuous animation must actually stop and transitions must collapse, while every control stays fully usable.
+
+## Constraints
+
+No new runtime dependencies. Nothing that assumes a scrollbar. No change to layout geometry, colours, radii or the 4px spacing rhythm. Every added listener and timer must clean up on unmount, per AGENTS.md.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Acceptance Criteria
+<!-- AC:BEGIN -->
+- [ ] #1 No new runtime dependency is added: three, @react-three/fiber, drei, gsap, framer-motion and lenis are absent from package.json, and total client JavaScript for the built application does not exceed 620 KB.
+- [ ] #2 Magnetic attraction and panel tilt are pointer-only: with a coarse pointer, no fine pointer, or keyboard-only navigation, nothing moves, and the site is fully operable.
+- [ ] #3 prefers-reduced-motion: reduce stops continuous canvas animation and collapses added transitions, and every control remains reachable and usable. The hard-coded reduce flag in the canvas engines is removed rather than left false.
+- [ ] #4 All interactive elements remain keyboard reachable with a visible focus indicator, and the section nav and all four panels can be operated without a pointer.
+- [ ] #5 At 390px there is no horizontal overflow, and tilt or magnetic movement cannot push any content outside its panel or cause a scrollbar.
+- [ ] #6 Text contrast and the committed palette are unchanged; grain opacity stays low enough that body text keeps its existing measured contrast ratio.
+- [ ] #7 Added pointer and animation work is time-based rather than frame-count based, so behaviour does not change with refresh rate.
+- [ ] #8 Before and after screenshots are attached at 1280px and 390px, and a measurement records the client JavaScript total and the longest task in the main thread so the performance cost is visible rather than asserted.
+<!-- AC:END -->
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Acceptance criteria are verified with recorded evidence.
-- [ ] #2 Relevant checks pass; new interactions have regression coverage, and npm test plus git diff --check pass before committing.
-- [ ] #3 Documentation is updated where behavior or workflow changes, and remaining limitations are recorded.
-- [ ] #4 Passes owners "Wow!" test.
+- [ ] #1 Relevant checks pass; new interactions have regression coverage, and npm test plus git diff --check pass before committing.
+- [ ] #2 Documentation is updated where behavior or workflow changes, and remaining limitations are recorded.
+- [ ] #3 The wow factor is judged by the owner against before and after screenshots at both widths, not by a checkbox.
+- [ ] #4 Reduced-motion and keyboard-only paths are verified by test, not assumed.
+- [ ] #5 Acceptance criteria are verified with recorded evidence.
 <!-- DOD:END -->
