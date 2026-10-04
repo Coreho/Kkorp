@@ -115,3 +115,96 @@ test('health endpoint reports liveness without touching a database', async ({ re
   const body = await response.json();
   expect(body.ok).toBe(true);
 });
+test('the jelly swarm paints the docked logo and nothing oversized', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const errors = await openSite(page);
+
+  await enterSite(page);
+  // Let the logo glide up and dock, and the panel icon arrive.
+  await page.waitForTimeout(3500);
+
+  const painted = await page.evaluate(() => {
+    const canvas = document.querySelector('canvas.pixelfield');
+    const ctx = canvas.getContext('2d');
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let count = 0;
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] > 8) {
+        count += 1;
+      }
+    }
+    return { count, width: canvas.width, height: canvas.height };
+  });
+
+  // The swarm must have sized its canvas to the viewport, not the 300x150
+  // default an un-initialised canvas keeps.
+  expect(painted.width).toBe(1280);
+  expect(painted.height).toBe(800);
+
+  // Two shapes are visible: a 162px docked logo and a panel icon of a few
+  // hundred pixels. A regression that drew a glyph at the canvas default font
+  // size inside the scaled space filled the whole viewport with ~590k pixels;
+  // an engine that failed to start painted nothing.
+  expect(painted.count).toBeGreaterThan(20_000);
+  expect(painted.count).toBeLessThan(200_000);
+
+  expect(errors).toEqual([]);
+});
+
+test('the jelly icon moves to each slide and morphs between them', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const errors = await openSite(page);
+  await enterSite(page);
+
+  /**
+   * Bounding box of the swarm's icon, ignoring the docked header logo.
+   *
+   * Averaging colour across the canvas would be dominated by the blue logo and
+   * by the panel behind it. The icon's position is what actually differs per
+   * slide: About's cloud sits upper-right of the panel, Projects' computer
+   * lower-right, the Lobby's bubble above the chat window.
+   */
+  const iconBox = () =>
+    page.evaluate(() => {
+      const canvas = document.querySelector('canvas.pixelfield');
+      const ctx = canvas.getContext('2d');
+      const { width, height } = canvas;
+      const { data } = ctx.getImageData(0, 0, width, height);
+      let x0 = Infinity;
+      let y0 = Infinity;
+      let x1 = -1;
+      let y1 = -1;
+      for (let y = 120; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          if (data[(y * width + x) * 4 + 3] > 40) {
+            if (x < x0) x0 = x;
+            if (y < y0) y0 = y;
+            if (x > x1) x1 = x;
+            if (y > y1) y1 = y;
+          }
+        }
+      }
+      return x1 < 0 ? null : { x0, y0, x1, y1, w: x1 - x0, h: y1 - y0 };
+    });
+
+  const boxes = {};
+  for (const [index, name] of [[0, 'about'], [1, 'blog'], [2, 'projects'], [3, 'chat']]) {
+    await page.locator(`[data-i="${index}"]`).click();
+    await page.waitForTimeout(3200);
+    boxes[name] = await iconBox();
+  }
+
+  for (const name of ['about', 'blog', 'projects', 'chat']) {
+    expect(boxes[name], `${name} icon should be painted`).not.toBeNull();
+    // Each icon is a few hundred pixels across; anything near the viewport
+    // width means a shape failed to scale to its placement.
+    expect(boxes[name].w).toBeGreaterThan(60);
+    expect(boxes[name].w).toBeLessThan(700);
+  }
+
+  // The four placements are genuinely different places on the panel.
+  const centres = Object.values(boxes).map((b) => `${Math.round((b.x0 + b.x1) / 2)},${Math.round((b.y0 + b.y1) / 2)}`);
+  expect(new Set(centres).size).toBe(4);
+
+  expect(errors).toEqual([]);
+});

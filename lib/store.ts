@@ -52,6 +52,13 @@ export interface SiteState {
   lines: ChatLine[];
   /** Rotating About caption word; set by /spell for a short window. */
   spell: string | null;
+  /**
+   * The About panel's rotating caption, as HTML.
+   *
+   * Owned by the jelly engine, which rotates it every 9s and lets /spell and
+   * greetings hold it. It is escaped in the engine before it gets here.
+   */
+  captionHtml: string;
   partyUntil: number;
   /** Bumped to replay the buzz animation on the sender's own window. */
   buzzNonce: number;
@@ -64,6 +71,7 @@ export const initialState: SiteState = {
   people: [],
   lines: [],
   spell: null,
+  captionHtml: 'The logo up top takes you back to the start.',
   partyUntil: 0,
   buzzNonce: 0,
 };

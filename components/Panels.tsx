@@ -24,6 +24,26 @@ const POSTS = [
   },
 ];
 
+/**
+ * The rotating About caption.
+ *
+ * The jelly engine owns the caption text and emits it as HTML, because entries
+ * highlight a name or a count in bold. It escapes every interpolated value
+ * before wrapping it, so the only markup here is the engine's own `<b>`. The
+ * prototype set `innerHTML` on this node directly; in React the equivalent is an
+ * explicit HTML sink.
+ */
+function NowCaption({ html }: { html: string }) {
+  return (
+    <p
+      className="now"
+      data-now
+      aria-live="polite"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
 export function AboutBody({
   caption,
   onGotoChat,
@@ -49,9 +69,7 @@ export function AboutBody({
             A small corner of the internet. Posts, projects, and a chat room you
             can walk into with nothing but a screen name.
           </p>
-          <p className="now" data-now aria-live="polite">
-            {caption}
-          </p>
+          <NowCaption html={caption} />
         </div>
         <div className="detail about">
           <p className="long">
@@ -114,9 +132,7 @@ export function AboutBody({
               </ul>
             </section>
           </div>
-          <p className="now" data-now aria-live="polite">
-            {caption}
-          </p>
+          <NowCaption html={caption} />
         </div>
         <Action label="About" />
       </div>

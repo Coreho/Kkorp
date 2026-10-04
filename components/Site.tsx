@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { ChatWindow } from './ChatWindow';
+import { JellyLayer } from './JellyLayer';
 import { HomeHit, Landing, Nav } from './Chrome';
 import { AboutBody, BlogBody, ChatRestBody, ProjectsBody } from './Panels';
 import { Bg, Panel, Tab } from './Panel';
@@ -22,11 +23,15 @@ const SWIPE_THRESHOLD = 60;
 const SWIPE_DOMINANCE = 1.5;
 const COPY_FEEDBACK_MS = 1600;
 
-/** The About caption: who spoke last and how many are in the room. */
+/**
+ * The About caption.
+ *
+ * Rotation and the live chat values are owned by the jelly engine, which
+ * publishes the caption into the store; React only renders it.
+ */
 function useAboutCaption(): string {
-  const { people, screenName, lines } = useSite();
-  const lastSpeaker = [...lines].reverse().find((line) => line.kind !== 'system');
-  return `${lastSpeaker ? `${lastSpeaker.who} spoke last` : 'The room is quiet'} · ${people.length} online${screenName ? ' · you are here' : ''}`;
+  const { captionHtml } = useSite();
+  return captionHtml;
 }
 
 export function Site() {
@@ -171,6 +176,7 @@ export function Site() {
     <>
       <Landing entered={entered} onEnter={enterSite} />
       <HomeHit entered={entered} />
+      <JellyLayer />
       <canvas className="dotfield" id="dotfield" aria-hidden="true" />
 
       <Nav onGo={openByIndex} onStep={step} current={currentIndex} hidden={!entered} />
