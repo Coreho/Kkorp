@@ -1,17 +1,18 @@
 # KoreoKorp VPS deployment
 
-> **Scope.** This file documents the **static prototype** deployment that is
-> live now. The planned replacement — a Next.js application container backed by
-> Supabase, with its own deploy and rollback procedure — is specified in
-> `docs/production-architecture.md`. Until that work ships, everything below
-> remains the accurate description of production.
+> **Scope.** The first half of this file documents the **static prototype** that
+> is live now. The second half documents the **application** on staging, which
+> is deployed and verified but is *not* serving the live domain. The design is in
+> `docs/production-architecture.md`.
 
 Deployed on 2026-10-04 at **https://koreokorp.com** from commit
 `bfcc2937e32a2d0a3d9c07a038ee13337e7b3b7b`.
 
 This serves the static prototype, including sample content and scripted chat.
-The VPS address is `173.230.140.70`. The apex domain resolves here;
-`www.koreokorp.com` has no DNS record and is not configured.
+The VPS address is `173.230.140.70`. The apex domain, `www.koreokorp.com` and
+`staging.koreokorp.com` all resolve here; only the apex is configured in Proxy
+Manager, so `www` and `staging` have no certificate until their hosts exist.
+`www` remains draft-001.
 
 ## Hosting
 
@@ -91,3 +92,90 @@ All three tests also passed against `https://koreokorp.com`, covering navigation
 scripted chat, and the 390px phone layout without browser errors.
 Both Nginx configurations validate. The origin is healthy; the public endpoint
 returns HTTP 200 over trusted HTTPS, and HTTP redirects to HTTPS.
+
+---
+
+# The application on staging
+
+The Next.js application is deployed and verified at
+**https://staging.koreokorp.com**. It is **not** serving koreokorp.com: proxy
+host 9 still points at the `koreokorp-web` static container, and repointing it is
+TASK-018, a separate deliberate step.
+
+The application's visual state is incomplete. The canvas engines are not ported
+yet, so the landing shows an empty ellipse where the jelly logo belongs.
+
+## Application files on the VPS
+
+| Path | What |
+|---|---|
+| `/opt/stacks/koreokorp/compose-app.yaml` | The `app` service. Separate from `compose.yaml` so the live static site cannot be disturbed. |
+| `/opt/stacks/koreokorp/deploy-app.sh` | Builds a commit-tagged image, starts it, waits for health, records the rollback target. |
+| `/opt/stacks/koreokorp/previous-release-app` | The rollback target: a commit SHA, mode 644, no secret. |
+| `/opt/stacks/koreokorp/app.env` | Not created yet. The site runs with no environment variables until TASK-017 needs any. |
+
+`deploy.sh` is **deliberately unmodified**. It publishes the static prototype and
+is the production rollback target; `deploy-app.sh` is its companion.
+
+## Proxy Manager objects
+
+| Id | Domain | Forwards to | Certificate |
+|---|---|---|---|
+| 9 | `koreokorp.com` | `koreokorp-web:80` | 10, expires 2027-01-02 |
+| 10 | `staging.koreokorp.com` | `koreokorp-app:3000` | 11, expires 2027-01-02 |
+
+Both were created through the Proxy Manager API. Note for future automation: the
+API rejects the extra fields its own UI sends (`agree`, `ssl_forcesh`), requires
+`forward_scheme`, and its update route is the **plural** `/nginx/proxy-hosts/:id`.
+Response headers must use `more_set_headers`, not `proxy_set_header`, because
+Proxy Manager emits its own `proxy_set_header` directives inside the location
+block and they override server-level ones.
+
+To remove staging: delete proxy host 10 and certificate 11 in Proxy Manager, then
+`sudo docker compose -f /opt/stacks/koreokorp/compose-app.yaml down`. The DNS
+record may stay; an unconfigured name simply does not resolve in Proxy Manager.
+
+## Update
+
+```bash
+cd /home/korebear/Kkorp
+npm run lint && npm run typecheck && npm test && npm run test:app
+git diff --check
+sudo /opt/stacks/koreokorp/deploy-app.sh /home/korebear/Kkorp
+KOREOKORP_STAGING=1 npm run test:app -- tests/app/staging-tls.spec.js
+```
+
+The script refuses to deploy uncommitted application changes, because the image
+tag is derived from the commit and would otherwise be a lie.
+
+## Roll back the application
+
+```bash
+previous=$(cat /opt/stacks/koreokorp/previous-release-app)
+sudo docker tag "koreokorp-app:$previous" koreokorp-app:current
+sudo env KOREOKORP_RELEASE="$previous" \
+  docker compose -f /opt/stacks/koreokorp/compose-app.yaml up -d
+curl --fail --silent --show-error --head https://staging.koreokorp.com
+```
+
+This was rehearsed, not just written: rolled forward from `a41a4a45ea4e` to
+`ac8fe5b2e6b6`, back to `a41a4a45ea4e`, then forward again, verifying health and
+the TLS suite at each step. Rolling back to the **static prototype** instead uses
+the unchanged `previous-release` symlink procedure above.
+
+Migrations are not rolled back automatically, so every migration must stay
+backward compatible with the previous release. TASK-017 owns that rule.
+
+## Validation performed
+
+- The container runs as uid 1001 on a read-only root filesystem with all
+  capabilities dropped; a write to `/app` is refused. The 512 MB limit and the
+  health check are applied.
+- CSS, JavaScript and the self-hosted webfonts are all served correctly over the
+  `edge` network by container name, which is how Proxy Manager reaches it.
+- It runs with zero environment variables set, as the architecture requires.
+- Staging returns HTTP/2 200 over a valid Let's Encrypt certificate, redirects
+  HTTP to HTTPS, sets HSTS, and matches the live site's `X-Content-Type-Options`,
+  `Referrer-Policy` and `Permissions-Policy` exactly.
+- The local suite passes 4 tests; the TLS suite passes 2 more against staging.
+  koreokorp.com was confirmed untouched throughout.
