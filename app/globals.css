@@ -65,12 +65,12 @@ body::after {
 .dotfield { position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
 
 /* ---------- Carousel stage ---------- */
-/* `perspective` is what makes the panel's lean read as depth rather than as the
-   panel simply getting narrower: a rotateY on its own is symmetric about the
-   centre, so it squashes the silhouette evenly instead of bringing one edge
-   forward. It applies to the panels' transforms and to nothing else, because
-   they are the only 3D-transformed children. */
-main#panels { position: fixed; z-index: 2; top: 84px; bottom: 84px; left: 0; right: 0; perspective: 1700px; transition: opacity .5s ease, transform .6s cubic-bezier(.4, 0, .2, 1); }
+/* `perspective` was tried here and removed. A perspective-projected bounding box
+   is larger than the panel's real one, and the jelly swarm reads that box every
+   frame to place its icon, so the icon drifted about 30px from where the
+   prototype puts it. A plain rotateY shrinks the box by well under a pixel at
+   these angles, which is why the lean can stay and the perspective cannot. */
+main#panels { position: fixed; z-index: 2; top: 84px; bottom: 84px; left: 0; right: 0; transition: opacity .5s ease, transform .6s cubic-bezier(.4, 0, .2, 1); }
 main#panels.stage-off { opacity: 0; transform: scale(.96); pointer-events: none; visibility: hidden; }
 .panel {
   --accent-rgb: 119, 119, 255;
@@ -547,13 +547,24 @@ h2 {
 
 /* ---------- Tactility: pointer response in the visible layer ---------- */
 
-/* One fixed layer carries both the vignette and the grain. `pointer-events:
-   none` keeps every control underneath it clickable, and `aria-hidden` keeps it
-   out of the accessibility tree. Overlay blending is deliberate: with mid-grey
-   noise it is close to a no-op on mid-tones, so body text keeps the contrast it
-   already had, which is what AC#6 requires. */
+/* One fixed layer carries both the vignette and the grain.
+   `pointer-events: none` keeps every control underneath it clickable, and
+   `aria-hidden` keeps it out of the accessibility tree.
+
+   It sits at z-index 1, behind the carousel and the chrome, so it can never sit
+   between the eye and a piece of text. That is a simplification rather than a
+   measured rescue: with the layer overlaid on top, the Lobby's chat log measured
+   5.54:1 against 5.58:1 with no grain at all, a difference of 0.04 ratio points,
+   so the blend was not actually costing that text anything measurable. It is put
+   behind the panels because a layer that provably cannot touch text is easier to
+   reason about than one whose safety depends on a blend mode happening to be
+   gentle, and because what remains visible is the backdrop the carousel sits on,
+   which is where a vignette belongs anyway.
+
+   The chat log's own contrast, around 5.6:1, is pre-existing and unchanged by
+   this work. It passes AA for body text and simply reads soft by design. */
 .film {
-  position: fixed; inset: 0; z-index: 200; pointer-events: none;
+  position: fixed; inset: 0; z-index: 1; pointer-events: none;
   opacity: .05; mix-blend-mode: overlay;
   background-image:
     radial-gradient(125% 95% at 50% 42%, transparent 38%, rgba(0, 0, 0, .5) 100%),

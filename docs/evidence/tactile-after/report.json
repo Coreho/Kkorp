@@ -1,7 +1,7 @@
 {
   "label": "after",
   "base": "http://127.0.0.1:4180",
-  "captured": "2026-10-05T09:33:50.435Z",
+  "captured": "2026-10-05T10:41:39.533Z",
   "widths": {
     "1280px": {
       "status": 200,
@@ -28,9 +28,9 @@
         }
       },
       "perf": {
-        "longestTaskMs": 63,
+        "longestTaskMs": 118,
         "longTaskCount": 3,
-        "domContentLoadedMs": 44,
+        "domContentLoadedMs": 37,
         "jsTransferredKB": 155,
         "jsDecodedKB": 504.1,
         "jsRequestCount": 7
@@ -63,9 +63,9 @@
         }
       },
       "perf": {
-        "longestTaskMs": null,
-        "longTaskCount": 0,
-        "domContentLoadedMs": 120,
+        "longestTaskMs": 58,
+        "longTaskCount": 2,
+        "domContentLoadedMs": 34,
         "jsTransferredKB": 155,
         "jsDecodedKB": 504.1,
         "jsRequestCount": 7

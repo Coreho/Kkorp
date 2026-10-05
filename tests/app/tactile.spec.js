@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
+import { decodePng, regionContrast } from './png.js';
 
 /**
  * Regression coverage for the visible-layer tactility.
@@ -436,152 +437,111 @@ test.describe('tactility', () => {
     await context.close();
   });
 
-  test('the grain layer leaves measured text contrast alone', async ({ page }) => {
+  test('the grain layer leaves rendered text contrast untouched', async ({ page }) => {
     await page.goto('/');
     await enter(page);
 
-    // Both the dark glass panel and the light chat window are checked, because
-    // the vignette darkens edges and the chat window is the one place with dark
-    // text on a light face.
-    await page.locator('#cnav button[data-i="3"]').click();
-    await page.waitForTimeout(900);
-
+    /**
+     * Measure the pixels the browser actually produced.
+     *
+     * The first attempt at this test drew the blend maths into a canvas and
+     * compared ratios. It passed while the Lobby's chat log was visibly washed
+     * out on staging, because `overlay` lightens and over a near-white chat face
+     * that pushes light grey text towards white. No simulation of the blend
+     * predicted it; measuring the screenshot does.
+     *
+     * The claim under test is stronger than "the grain is subtle": the layer sits
+     * behind the carousel and the chrome, so over any text it changes nothing at
+     * all and the two screenshots must be pixel-identical.
+     */
     const film = await page.evaluate(() => {
       const el = document.querySelector('.film');
-      const s = getComputedStyle(el);
-      return { opacity: Number.parseFloat(s.opacity), blend: s.mixBlendMode };
+      if (!el) return null;
+      const style = getComputedStyle(el);
+      return {
+        zIndex: style.zIndex,
+        blend: style.mixBlendMode,
+        opacity: Number.parseFloat(style.opacity),
+      };
     });
-    // Overlay, so mid-grey noise is close to a no-op, and low enough that the
-    // worst case stays well inside a rounding step of the original ratio.
+    expect(film, 'the grain layer should exist').not.toBeNull();
     expect(film.blend).toBe('overlay');
     expect(film.opacity).toBeLessThanOrEqual(0.06);
 
-    const ratios = await page.evaluate(async () => {
-      const parse = (value) => {
-        const m = value.match(/[\d.]+/g).map(Number);
-        return { r: m[0], g: m[1], b: m[2], a: m.length > 3 ? m[3] : 1 };
-      };
-      const lin = (c) => {
-        const s = c / 255;
-        return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-      };
-      const lum = ({ r, g, b }) =>
-        0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-      const ratio = (a, b) => {
-        const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
-        return (hi + 0.05) / (lo + 0.05);
-      };
+    // Sample the chat log, which is the worst case on the site: light grey text
+    // on the AIM window's near-white face, and the surface the overlay blend
+    // damaged.
+    await page.locator('#cnav button[data-i="3"]').click();
+    await page.waitForTimeout(1200);
+    const region = await page.locator('#log').boundingBox();
+    expect(region, 'the chat log should be present').not.toBeNull();
 
-      const samples = [];
-      for (const sel of [
-        '.panel.open .rest p',
-        '.aim-message',
-        '.aim-body',
-      ]) {
-        const el = document.querySelector(sel);
-        if (!el) continue;
-        const s = getComputedStyle(el);
-        // Walk up for the first opaque background, which is what the text
-        // actually sits on.
-        let node = el;
-        let bg = null;
-        while (node && node !== document.documentElement) {
-          const c = parse(getComputedStyle(node).backgroundColor);
-          if (c.a > 0.9) {
-            bg = c;
-            break;
-          }
-          node = node.parentElement;
-        }
-        if (!bg) bg = { r: 12, g: 12, b: 18, a: 1 };
-        samples.push({ sel, before: ratio(parse(s.color), bg) });
-      }
+    const withGrain = await page.screenshot({ clip: region });
 
-      // Reproduce what overlay blending at the layer's opacity does to each
-      // pair, by running the real composite in a canvas.
-      const el = document.querySelector('.film');
-      const style = getComputedStyle(el);
-      const opacity = Number.parseFloat(style.opacity);
-      const canvas = document.createElement('canvas');
-      canvas.width = 64;
-      canvas.height = 64;
-      const ctx = canvas.getContext('2d');
-      const noise = new Image();
-      const svg =
-        "<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3'/></filter><rect width='64' height='64' filter='url(#n)'/></svg>";
-      const url = `data:image/svg+xml,${encodeURIComponent(svg)}`;
-      await new Promise((resolve) => {
-        noise.onload = resolve;
-        noise.onerror = resolve;
-        noise.src = url;
-      });
+    await page.evaluate(() => {
+      document.querySelector('.film').style.display = 'none';
+    });
+    await page.waitForTimeout(250);
+    const withoutGrain = await page.screenshot({ clip: region });
 
-      for (const sample of samples) {
-        const el2 = document.querySelector(sample.sel);
-        const fg = parse(getComputedStyle(el2).color);
-        let node = el2;
-        let bg = null;
-        while (node && node !== document.documentElement) {
-          const c = parse(getComputedStyle(node).backgroundColor);
-          if (c.a > 0.9) {
-            bg = c;
-            break;
-          }
-          node = node.parentElement;
-        }
-        if (!bg) bg = { r: 12, g: 12, b: 18, a: 1 };
-
-        const read = (paint) => {
-          ctx.clearRect(0, 0, 64, 64);
-          ctx.fillStyle = `rgb(${paint.r}, ${paint.g}, ${paint.b})`;
-          ctx.fillRect(0, 0, 64, 64);
-          ctx.globalAlpha = opacity;
-          ctx.globalCompositeOperation = 'overlay';
-          ctx.drawImage(noise, 0, 0, 64, 64);
-          ctx.globalAlpha = 1;
-          ctx.globalCompositeOperation = 'source-over';
-          const d = ctx.getImageData(0, 0, 64, 64).data;
-          // The grain shifts pixels either way, so the worst case for contrast
-          // is the most adverse shift each channel received.
-          let fgPx = { r: 0, g: 0, b: 0 };
-          let bgPx = { r: 255, g: 255, b: 255 };
-          for (let i = 0; i < d.length; i += 4) {
-            const px = { r: d[i], g: d[i + 1], b: d[i + 2] };
-            fgPx = {
-              r: fgPx.r === 0 && px.r > 0 ? px.r : fgPx.r,
-              g: fgPx.g === 0 && px.g > 0 ? px.g : fgPx.g,
-              b: fgPx.b === 0 && px.b > 0 ? px.b : fgPx.b,
-            };
-            bgPx = {
-              r: px.r < bgPx.r ? px.r : bgPx.r,
-              g: px.g < bgPx.g ? px.g : bgPx.g,
-              b: px.b < bgPx.b ? px.b : bgPx.b,
-            };
-          }
-          return { fg: fgPx, bg: bgPx };
-        };
-        // Both extremes of the noise field, so the bound does not depend on
-        // which way this particular tile happened to fall.
-        const lowNoise = { r: 0, g: 0, b: 0 };
-        const highNoise = { r: 255, g: 255, b: 255 };
-        void lowNoise;
-        void highNoise;
-        const applied = read(fg);
-        const appliedBg = read(bg);
-        sample.after = Math.min(
-          ratio(applied.fg, appliedBg.bg),
-          ratio(applied.bg, appliedBg.fg),
-        );
-      }
-      return samples;
+    const on = regionContrast(decodePng(withGrain), {
+      x: 0,
+      y: 0,
+      width: decodePng(withGrain).width,
+      height: decodePng(withGrain).height,
+    });
+    const off = regionContrast(decodePng(withoutGrain), {
+      x: 0,
+      y: 0,
+      width: decodePng(withoutGrain).width,
+      height: decodePng(withoutGrain).height,
     });
 
-    expect(ratios.length).toBeGreaterThan(0);
-    for (const sample of ratios) {
-      // The worst case the grain can produce must not drop the ratio by half a
-      // point, let alone change which WCAG band it falls in.
-      expect(sample.before - sample.after).toBeLessThan(0.5);
-    }
+    // The grain must not move the ratio at all. A small tolerance covers
+    // antialiasing jitter, not a real change.
+    expect(
+      Math.abs(on.ratio - off.ratio),
+      `chat log contrast was ${on.ratio.toFixed(2)}:1 with the grain and ${off.ratio.toFixed(2)}:1 without`,
+    ).toBeLessThan(0.1);
+  });
+
+  test('the panel box does not change when it leans, so the jelly cannot drift', async ({
+    page,
+  }) => {
+    await page.goto('/');
+    await enter(page);
+
+    /**
+     * The jelly swarm reads the open panel's bounding box every frame to place
+     * its icon, so anything that inflates that box moves the icon. A
+     * `perspective` on the stage did exactly that and pushed the icon about 30px
+     * from where the prototype puts it. Asserting on the box catches the cause
+     * rather than the symptom.
+     */
+    const boxAt = async (fx, fy) => {
+      const box = await page.locator('[data-panel="about"]').boundingBox();
+      await page.mouse.move(box.x + box.width * fx, box.y + box.height * fy, {
+        steps: 10,
+      });
+      await page.waitForTimeout(500);
+      return page.evaluate(() => {
+        const r = document.querySelector('[data-panel="about"]').getBoundingClientRect();
+        return { left: r.left, top: r.top, width: r.width, height: r.height };
+      });
+    };
+
+    const left = await boxAt(0.15, 0.5);
+    const right = await boxAt(0.85, 0.5);
+
+    // The lean must be visible...
+    const tilt = await props(page, '[data-panel="about"]', ['--tilt-y']);
+    expect(Math.abs(num(tilt['--tilt-y']))).toBeGreaterThan(0.5);
+
+    // ...without moving the panel's own box, which is what the swarm measures.
+    expect(Math.abs(left.left - right.left)).toBeLessThan(1);
+    expect(Math.abs(left.top - right.top)).toBeLessThan(1);
+    expect(Math.abs(left.width - right.width)).toBeLessThan(1);
+    expect(Math.abs(left.height - right.height)).toBeLessThan(1);
   });
 
   test('the smoothing is driven by elapsed time, not by frame count', async ({

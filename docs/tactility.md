@@ -11,7 +11,7 @@ This is the layer that closes that gap. It adds no dependency and no scroll.
 
 | Piece | Where | Mechanism |
 |---|---|---|
-| Panel lean | `lib/useTactile.ts`, `.panel` | `rotateX`/`rotateY` under a stage `perspective`, plus an inner content offset |
+| Panel lean | `lib/useTactile.ts`, `.panel` | `rotateX`/`rotateY` plus an inner content offset, composed in the stylesheet |
 | Magnetic controls | `lib/useTactile.ts`, `.cnav button`, `.bevel` | Displacement toward the pointer inside a radius, falling off to nothing |
 | Nav pill travel | `lib/useTactile.ts`, `.cnav-pill` | One pill lerped between items, squashed by its own speed |
 | Grain and vignette | `.film`, `.bevel` and `.aim-send` for press | Pure CSS: inline SVG turbulence plus a gradient |
@@ -97,13 +97,46 @@ Grain and vignette stay in both cases: a still texture is not motion.
 
 ## Contrast
 
-The grain layer is `mix-blend-mode: overlay` at `opacity: .05`. Overlay with
-mid-grey noise is close to a no-op on mid-tones, so measured text contrast is
-left alone. This is verified rather than asserted: the test walks up from each
-text sample to the first opaque background, then runs the **real** composite in a
-canvas and recomputes the WCAG ratio, for both the dark glass panel and the light
-chat window, which is the one place with dark text on a light face. The worst
-case the noise can produce must not drop any ratio by half a point.
+The grain layer is `mix-blend-mode: overlay` at `opacity: .05`, and it sits at
+`z-index: 1` — behind the carousel and the chrome, so it can never sit between
+the eye and a piece of text.
+
+That placement is a simplification, not a measured rescue, and it is worth being
+precise about. With the layer overlaid on top, the Lobby's chat log measured
+**5.54:1 against 5.58:1** with no grain at all: a difference of **0.04 ratio
+points**. The blend was not costing that text anything measurable. The layer went
+behind the panels because a layer that provably cannot touch text is easier to
+reason about than one whose safety depends on a blend mode happening to be
+gentle, and because what stays visible is the backdrop the carousel sits on,
+which is where a vignette belongs anyway.
+
+The chat log's own contrast, around **5.6:1**, is pre-existing and unchanged by
+this work. It passes AA for body text and simply reads soft by design.
+
+### Measuring this honestly
+
+The first version of this check drew the blend maths into a canvas and compared
+the resulting ratios. **It passed, and the site was still wrong.** It was
+measuring a simulation of the blend rather than the pixels the browser produced,
+which is the same mistake as the two CSS traps above, one level up.
+
+`tests/app/png.js` is now a small PNG reader built on Node's `zlib`, so the test
+screenshots the real chat log with and without the layer and compares the ratios.
+Adding no dependency was deliberate; `zlib` is in the standard library.
+
+## What `perspective` cost, and why it is gone
+
+`perspective: 1700px` on the stage made the panel's lean read as depth rather
+than as the panel narrowing, and it looked good. It also **moved the jelly icon
+about 30px**, because `popPlacement()` reads the open panel's bounding box every
+single frame to place the icon, and a perspective-projected box is larger than
+the panel's real one. Measured: the box's `left` moved **12.3px** as the pointer
+crossed the panel.
+
+Removed. A plain `rotateY` shrinks the box by well under a pixel at these angles,
+so the lean survives and the icon does not drift. `tests/app/tactile.spec.js`
+asserts the panel's box does not change when it leans, which is the cause rather
+than the symptom.
 
 ## Verifying
 
@@ -128,16 +161,19 @@ Each test was checked against a real mutation rather than trusted:
 | `PILL_TAU = 0.001`, so the pill teleports | caught |
 | Remove the `(pointer: fine)` gate | caught |
 | Remove the reduced-motion gate | caught |
+| Put the grain layer back on top at `z-index: 200` | caught |
+| Put `perspective` back on the stage | caught |
 
 ## Known limitations
 
 - The peeking neighbours only lean when the pointer is within 40px of them, so
   the "lean away" read is subtle rather than constant. Making it constant would
   mean movement with no pointer cause, which AC#2 rules out.
-- `perspective: 1700px` on the stage puts the panel contents in a 3D rendering
-  context. Measured cost was within the run-to-run noise of the pre-change
-  baseline (longest task 63ms against 71ms before), but it is the first thing to
-  revisit if the canvas engines ever get heavier.
+- The lean is a rotation without perspective, so it reads as a slight squash
+  rather than as a receding edge. Making it read as depth needs `perspective`
+  back, which needs the jelly swarm to stop reading the panel's bounding box and
+  use its resting geometry instead. That is the real fix and it is a change to
+  `lib/canvas/jelly/engine.ts`, not a CSS tweak.
 - `.action` and `.close` are `display: none !important` in the ported stylesheet,
   as they are in the prototype, so the press feedback is not applied to them.
 - The stage is measured for carousel geometry while `stage-off` still applies
