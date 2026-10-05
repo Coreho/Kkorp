@@ -5,8 +5,10 @@
 > is deployed and verified but is *not* serving the live domain. The design is in
 > `docs/production-architecture.md`.
 
-Deployed on 2026-10-04 at **https://koreokorp.com** from commit
-`bfcc2937e32a2d0a3d9c07a038ee13337e7b3b7b`.
+Currently serving **https://koreokorp.com** from release
+`20261005T065959Z-f10ef100c790`, commit
+`f10ef100c7902bdd18b267d615d4f18d08b6f213` (first published 2026-10-04 as
+`bfcc2937e32a2d0a3d9c07a038ee13337e7b3b7b`).
 
 This serves the static prototype, including sample content and scripted chat.
 The VPS address is `173.230.140.70`. The apex domain, `www.koreokorp.com` and
@@ -25,6 +27,32 @@ Manager, so `www` and `staging` have no certificate until their hosts exist.
   Docker is enabled at boot. No host port is published for this container.
 - Releases live under `/var/www/koreokorp/releases/`; `current` is an atomic symlink.
   Only the self-contained `index.html` and a commit marker are published.
+
+## Host reboot
+
+Verified from the journal on 2026-10-05, not by reading the Dockerfile:
+
+- Boot `-1` ended **gracefully** at 2026-10-04 14:34:39 — `Reached target
+  shutdown.target`, `Syncing filesystems and block devices`, `Journal stopped`,
+  and Docker's `Daemon shutdown complete`. There is **no OOM, kernel panic or
+  watchdog** entry in that boot.
+- The host was then powered off for roughly 15 hours and cold-booted at
+  2026-10-05 05:23:12.
+- `docker.service` is `enabled`, and by 05:23:28 it had auto-started **all 13**
+  containers across all 10 compose projects. Their `StartedAt` values span
+  05:23:27.983 to 05:23:28.056 — 73 ms — which is Docker's parallel restore on
+  daemon start, not a human running `compose up`. Every one is
+  `restart=unless-stopped`.
+- Afterwards every container is `healthy` (where a health check exists) with
+  `RestartCount=0`, and both `koreokorp.com` and `staging.koreokorp.com` return
+  HTTP/2 200.
+
+So the stack recovers unattended from a cold boot, which is the behaviour the
+supervision requirement asks for. No further reboot was forced to re-prove it.
+
+One pre-existing exception, unrelated to KoreoKorp: `thread-web` has exited 0
+since 2026-10-01 with a `unless-stopped` policy, so it appears to have been
+stopped deliberately and was correctly left alone by the boot.
 
 ## VPS files
 
@@ -84,6 +112,30 @@ curl --fail --silent --show-error --head https://koreokorp.com
 ```
 
 The first deployment has no earlier release to restore.
+
+`previous-release` is written by `deploy.sh` as root with mode 640, so read it
+through `sudo` as the block above does.
+
+### Rehearsed on 2026-10-05
+
+This procedure was executed against production, not just written down:
+
+| Step | `current` points at | Served `DEPLOYED_COMMIT` |
+|---|---|---|
+| Baseline | `releases/20261004T023635Z-bfcc2937e32a` | `bfcc2937e32a…` |
+| `deploy.sh` (roll forward) | `releases/20261005T065939Z-f10ef100c790` | `f10ef100c790…` |
+| Documented rollback above | `releases/20261004T023635Z-bfcc2937e32a` | `bfcc2937e32a…` |
+| `deploy.sh` (roll forward) | `releases/20261005T065959Z-f10ef100c790` | `f10ef100c790…` |
+
+`DEPLOYED_COMMIT` is published inside each release and served by the container,
+so `curl https://koreokorp.com/DEPLOYED_COMMIT` is an external, public proof of
+which release `current` resolves to. The served `index.html` hashed to
+`2c971ab6…` at every step, because the prototype has not changed since
+`bfcc2937`; the rollback moves the symlink without altering a single byte of
+live content. The site was checked in a real browser after the cycle at 1280px
+and 390px: HTTP 200, correct title, canvases painting, zero console errors and
+zero horizontal overflow. Both older releases are retained, and the atomic `mv`
+left no temporary symlink behind.
 
 ## Validation
 
@@ -148,6 +200,12 @@ KOREOKORP_STAGING=1 npm run test:app -- tests/app/staging-tls.spec.js
 The script refuses to deploy uncommitted application changes, because the image
 tag is derived from the commit and would otherwise be a lie.
 
+`npm run test:app` needs a current build, because it boots
+`.next/standalone/server.js`; run `npm run build` first. It selects
+`playwright.app.config.js` explicitly. It must: the root `playwright.config.js`
+sets `testIgnore: '**/app/**'`, so a bare `playwright test tests/app` matches no
+tests and exits 1.
+
 ## Roll back the application
 
 ```bash
@@ -177,8 +235,9 @@ backward compatible with the previous release. TASK-017 owns that rule.
 - Staging returns HTTP/2 200 over a valid Let's Encrypt certificate, redirects
   HTTP to HTTPS, sets HSTS, and matches the live site's `X-Content-Type-Options`,
   `Referrer-Policy` and `Permissions-Policy` exactly.
-- The local suite passes 4 tests; the TLS suite passes 2 more against staging.
-  koreokorp.com was confirmed untouched throughout.
+- The local application suite passes 12 tests with the 2 staging tests skipped;
+  the TLS suite passes 2 more against staging. koreokorp.com was confirmed
+  untouched throughout.
 
 ### Application state as of 2026-10-04
 
