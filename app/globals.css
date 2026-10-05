@@ -65,18 +65,36 @@ body::after {
 .dotfield { position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
 
 /* ---------- Carousel stage ---------- */
-main#panels { position: fixed; z-index: 2; top: 84px; bottom: 84px; left: 0; right: 0; transition: opacity .5s ease, transform .6s cubic-bezier(.4, 0, .2, 1); }
+/* `perspective` is what makes the panel's lean read as depth rather than as the
+   panel simply getting narrower: a rotateY on its own is symmetric about the
+   centre, so it squashes the silhouette evenly instead of bringing one edge
+   forward. It applies to the panels' transforms and to nothing else, because
+   they are the only 3D-transformed children. */
+main#panels { position: fixed; z-index: 2; top: 84px; bottom: 84px; left: 0; right: 0; perspective: 1700px; transition: opacity .5s ease, transform .6s cubic-bezier(.4, 0, .2, 1); }
 main#panels.stage-off { opacity: 0; transform: scale(.96); pointer-events: none; visibility: hidden; }
 .panel {
   --accent-rgb: 119, 119, 255;
   position: absolute; top: 0; bottom: 0; left: 0; width: 80%;
   overflow: hidden; cursor: pointer;
   border-radius: 32px;
+  /* Composed here rather than inline. A transform assigned through the CSSOM,
+     which is how React writes an inline style, silently rejects `var()`, so the
+     carousel geometry and the tilt have to arrive as numbers and be combined by
+     the stylesheet. The rotations default to 0deg, so the carousel is unchanged
+     until the tilt effect writes them, and they act in the panel's own space,
+     pivoting on whichever edge `transform-origin` already names. */
+  transform: translate3d(var(--panel-x, 0px), 0, 0) scale(var(--panel-scale, 1)) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
   background: linear-gradient(145deg, rgba(255, 255, 255, .045), transparent 34%), var(--card);
   border: .8px solid var(--glass-line);
   box-shadow: 0 36px 90px -30px rgba(0, 0, 0, .9), inset 0 1px 0 rgba(255, 255, 255, .13), 0 8px 20px rgba(0, 0, 0, .5);
-  transition: transform .6s cubic-bezier(.4, 0, .2, 1), opacity .4s ease, border-color .3s ease, box-shadow .3s ease;
+  transition: opacity .4s ease, border-color .3s ease, box-shadow .3s ease;
   will-change: transform;
+}
+/* The slide transition is scoped to the stage actually moving. Left on `.panel`
+   it would also apply to the tilt, which is rewritten every frame while the
+   pointer moves, and the lean would arrive 600ms late and read as broken. */
+#panels[data-moving="true"] .panel {
+  transition: transform .6s cubic-bezier(.4, 0, .2, 1), opacity .4s ease, border-color .3s ease, box-shadow .3s ease;
 }
 .p1 { --accent-rgb: 119, 119, 255; }
 .p2 { --accent-rgb: 75, 75, 160; }
@@ -95,7 +113,12 @@ main#panels.stage-off { opacity: 0; transform: scale(.96); pointer-events: none;
 }
 .panel.peek:hover { border-color: rgba(var(--accent-rgb), .62); box-shadow: 0 40px 110px -32px rgba(var(--accent-rgb), .32); }
 .panel.open { cursor: default; border-color: rgba(var(--accent-rgb), .28); }
-.panel .inner { transition: opacity .35s ease .18s; }
+.panel .inner {
+  /* Content slides against the panel's lean, so the panel reads as an object
+     with an inside rather than a flat picture that rotated. */
+  transform: translate3d(var(--tilt-shift-x, 0px), var(--tilt-shift-y, 0px), 0);
+  transition: opacity .35s ease .18s;
+}
 .panel:not(.open) .inner { opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility 0s linear .2s; }
 .panel:not(.open) .tab {
   display: flex; position: absolute; top: 0; bottom: 0; z-index: 3; width: var(--peek, 96px);
@@ -114,19 +137,37 @@ main#panels.stage-off { opacity: 0; transform: scale(.96); pointer-events: none;
   box-shadow: 0 20px 50px -16px rgba(0, 0, 0, .9), inset 0 1px 0 rgba(255, 255, 255, .08);
 }
 .cnav[hidden] { display: none; }
+/* The travelling indicator. Hidden until the effect has measured a real width,
+   so the pill never flashes at zero size on first paint. */
+.cnav-pill {
+  display: none; position: absolute; left: 0; top: 6px; z-index: -1; pointer-events: none;
+  width: var(--pill-w, 0px); height: 36px; border-radius: 9999px;
+  background: linear-gradient(135deg, #5656b7, #7c5bc4);
+  box-shadow: 0 8px 22px rgba(75, 75, 160, .42), inset 0 1px 0 rgba(255, 255, 255, .2);
+  transform: translate3d(var(--pill-x, 0px), 0, 0) scaleX(var(--pill-sx, 1));
+}
+.cnav[data-pill="ready"] .cnav-pill { display: block; }
 .cnav button {
   display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 9999px;
   background: transparent; border: .8px solid transparent; color: #e4e4e7; cursor: pointer;
   font: 500 11px var(--font); letter-spacing: .16em; text-transform: uppercase;
-  transition: background-color .2s ease, color .2s ease, transform .2s ease, box-shadow .2s ease;
+  /* `transform` carries the magnetic pull and is rewritten every frame, so it is
+     deliberately not transitioned. The hover lift and the press use the
+     independent `translate` and `scale` properties instead, which compose with
+     `transform` and can be eased on their own. */
+  transform: translate3d(var(--magnet-x, 0px), var(--magnet-y, 0px), 0);
+  transition: background-color .2s ease, color .2s ease, translate .18s var(--ease), scale .24s cubic-bezier(.34, 1.42, .64, 1), box-shadow .2s ease;
 }
 .cnav button span { opacity: .55; font-variant-numeric: tabular-nums; }
-.cnav button:hover { background: rgba(255, 255, 255, .08); color: #fff; transform: translateY(-1px); }
+.cnav button:hover { background: rgba(255, 255, 255, .08); color: #fff; translate: 0 -1px; }
 .cnav button[aria-current="true"] { background: linear-gradient(135deg, #5656b7, #7c5bc4); color: #fff; box-shadow: 0 8px 22px rgba(75, 75, 160, .42), inset 0 1px 0 rgba(255, 255, 255, .2); }
 .cnav button[aria-current="true"] span { opacity: .8; }
+/* Once the pill is placed it owns the highlight; the attribute stays, because the
+   repository check and the browser suite both pin it. */
+.cnav[data-pill="ready"] button[aria-current="true"] { background: transparent; box-shadow: none; }
 .cnav .cnav-arrow { width: 36px; padding: 0; justify-content: center; border-color: rgba(255, 255, 255, .15); }
 .cnav .cnav-arrow svg { width: 16px; height: 16px; }
-.cnav .cnav-arrow:active { transform: scale(.94); }
+.cnav .cnav-arrow:active { scale: .94; }
 
 .bg { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 .p1 .bg, .p2 .bg, .p3 .bg { background: linear-gradient(var(--card) 0 30%, rgba(12, 12, 18, 0) 52%), linear-gradient(0deg, var(--card) 0 56px, rgba(12, 12, 18, 0) 150px); }
@@ -502,4 +543,72 @@ h2 {
   .online i { animation: none; }
   .landing::after, .landing-hint { animation: none; }
   .post-list li, .proj div, .tags span, .cnav button { transition: none; }
+}
+
+/* ---------- Tactility: pointer response in the visible layer ---------- */
+
+/* One fixed layer carries both the vignette and the grain. `pointer-events:
+   none` keeps every control underneath it clickable, and `aria-hidden` keeps it
+   out of the accessibility tree. Overlay blending is deliberate: with mid-grey
+   noise it is close to a no-op on mid-tones, so body text keeps the contrast it
+   already had, which is what AC#6 requires. */
+.film {
+  position: fixed; inset: 0; z-index: 200; pointer-events: none;
+  opacity: .05; mix-blend-mode: overlay;
+  background-image:
+    radial-gradient(125% 95% at 50% 42%, transparent 38%, rgba(0, 0, 0, .5) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: cover, 180px 180px;
+}
+
+/* Press feedback: the control sinks and its shadow collapses, then springs back
+   past rest on release because the scale curve overshoots. `scale` and
+   `translate` are used rather than `transform` so the magnetic pull on the same
+   element is untouched and un-transitioned. */
+/* Only the chat window's own controls. `.action` and `.close` are
+   `display: none !important` in the ported stylesheet, as they are in the
+   prototype, so styling them would be a dead rule. */
+.bevel, .aim-send {
+  transition: scale .26s cubic-bezier(.34, 1.42, .64, 1), box-shadow .18s ease;
+}
+.bevel:active, .aim-send:active {
+  scale: .96;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .5);
+}
+.cnav button:active { scale: .95; }
+
+/* Magnetic pull for the chat window's own buttons, which have no hover lift to
+   conflict with. */
+.bevel { transform: translate3d(var(--magnet-x, 0px), var(--magnet-y, 0px), 0); }
+
+/* Staggered reveal. Delays step in milliseconds, so the sequence is defined in
+   time rather than in frames. */
+@keyframes kk-rise {
+  from { opacity: 0; transform: translate3d(0, 12px, 0); }
+  to { opacity: 1; transform: none; }
+}
+.panel.open .inner > * { animation: kk-rise .5s var(--ease) both; }
+.panel.open .inner > *:nth-child(1) { animation-delay: .02s; }
+.panel.open .inner > *:nth-child(2) { animation-delay: .09s; }
+.panel.open .inner > *:nth-child(3) { animation-delay: .16s; }
+.panel.open .inner > *:nth-child(4) { animation-delay: .23s; }
+.panel.open .inner > *:nth-child(5) { animation-delay: .3s; }
+.panel.open .inner > *:nth-child(6) { animation-delay: .37s; }
+.panel.open .inner > *:nth-child(n + 7) { animation-delay: .44s; }
+
+/* Reduced motion has to reach everything added above, not just what the
+   prototype animated. The grain and vignette stay, because a still texture is
+   not motion; everything that moves stops, and every control stays usable. */
+@media (prefers-reduced-motion: reduce) {
+  .panel.open .inner > * { animation: none; }
+  #panels[data-moving="true"] .panel { transition: opacity .4s ease, border-color .3s ease, box-shadow .3s ease; }
+  .panel .inner { transform: none; }
+  #cnav button, .bevel {
+    transform: none;
+    translate: none;
+    scale: none;
+    transition: background-color .2s ease, color .2s ease, box-shadow .2s ease;
+  }
+  .cnav button:hover { translate: none; }
+  .bevel, .aim-send { transition: box-shadow .18s ease; }
 }

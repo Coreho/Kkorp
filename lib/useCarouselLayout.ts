@@ -15,11 +15,32 @@ import { PANEL_ORDER } from '@/lib/store';
 export interface PanelLayout {
   width: string;
   transformOrigin: string;
-  transform: string;
+  /**
+   * The slide's scale, and its horizontal offset in pixels.
+   *
+   * The transform itself is composed in the stylesheet from these, not written
+   * here. A transform assigned through the CSSOM cannot contain `var()`, which
+   * is how React applies an inline style, so a string such as
+   * `translate3d(...) rotateX(var(--tilt-x, 0deg))` is silently dropped and the
+   * panel computes to `none`. Emitting the numbers as custom properties and
+   * letting `.panel` compose them keeps the tilt working and keeps this hook
+   * free of presentation.
+   */
+  scale: number;
   opacity: number;
   peek: boolean;
   peekL: boolean;
   peekR: boolean;
+  /**
+   * The slide's horizontal offset and width, in pixels.
+   *
+   * Exposed numerically so the tilt effect can work out each panel's resting
+   * centre from arithmetic instead of calling `getBoundingClientRect`. That
+   * matters because the rect of a tilted panel includes its own tilt, so
+   * measuring it would feed the tilt back into its own input.
+   */
+  x: number;
+  widthPx: number;
 }
 
 export interface CarouselLayout {
@@ -53,11 +74,13 @@ function panelLayoutFor(
     width: `${contentWidth}px`,
     transformOrigin:
       distance < 0 ? '100% 50%' : distance > 0 ? '0% 50%' : '50% 50%',
-    transform: `translate3d(${x}px, 0, 0) scale(${distance === 0 ? 1 : PEEKED_SCALE})`,
+    scale: distance === 0 ? 1 : PEEKED_SCALE,
     opacity: Math.abs(distance) > 1 ? 0 : 1,
     peek: Math.abs(distance) === 1,
     peekL: distance === -1,
     peekR: distance === 1,
+    x,
+    widthPx: contentWidth,
   };
 }
 

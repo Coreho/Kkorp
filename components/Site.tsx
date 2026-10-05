@@ -13,6 +13,7 @@ import { HomeHit, Landing, Nav } from './Chrome';
 import { AboutBody, BlogBody, ChatRestBody, ProjectsBody } from './Panels';
 import { Bg, Panel, Tab } from './Panel';
 import { useCarouselLayout } from '@/lib/useCarouselLayout';
+import { useTactile } from '@/lib/useTactile';
 import { useRecentChat } from '@/lib/useChatRoom';
 import { useSite } from '@/lib/useSite';
 import {
@@ -28,6 +29,8 @@ import {
 const SWIPE_THRESHOLD = 60;
 const SWIPE_DOMINANCE = 1.5;
 const COPY_FEEDBACK_MS = 1600;
+/** Matches the `.panel` transform transition the carousel slides with. */
+const SLIDE_MS = 620;
 
 /**
  * The About caption.
@@ -58,6 +61,38 @@ export function Site() {
   const [copied, setCopied] = useState(false);
   const [chatCanvas, setChatCanvas] = useState<HTMLCanvasElement | null>(null);
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useTactile(layout, current, entered);
+
+  /**
+   * Mark the stage while the carousel is sliding.
+   *
+   * The stylesheet only applies the long `transform` transition to panels under
+   * `#panels[data-moving]`. Without that scoping the same transition would also
+   * apply to the tilt, which is written every frame while the pointer moves, and
+   * the lean would arrive 600ms late and read as broken rather than soft.
+   *
+   * Written straight to the node rather than held in state: it is a CSS hook
+   * with no bearing on what React renders, and putting it in state would cost a
+   * render on every slide change for no benefit.
+   */
+  useEffect(() => {
+    const stage = stageNode.current;
+    if (!stage) {
+      return;
+    }
+    if (!entered || current === null) {
+      stage.removeAttribute('data-moving');
+      return;
+    }
+    stage.setAttribute('data-moving', 'true');
+    const timer = setTimeout(() => {
+      stage.removeAttribute('data-moving');
+    }, SLIDE_MS);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [current, entered]);
 
   useEffect(() => {
     return () => {
@@ -181,6 +216,11 @@ export function Site() {
 
   return (
     <>
+      {/* Grain and vignette. One element, no script, no request: the texture is
+          an inline SVG turbulence filter and the vignette is a gradient. Opacity
+          is kept low and the blend is overlay, where mid-grey is a no-op, so
+          measured text contrast is left alone. */}
+      <div className="film" aria-hidden="true" />
       <Landing entered={entered} onEnter={enterSite} />
       <HomeHit entered={entered} />
       <JellyLayer />

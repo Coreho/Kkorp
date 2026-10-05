@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import type { PanelId } from '@/lib/store';
 import type { PanelLayout } from '@/lib/useCarouselLayout';
 
@@ -74,12 +74,17 @@ export function Panel({
       data-panel={id}
       aria-label={title}
       aria-hidden={!isOpen}
-      style={{
-        width: layout.width,
-        transformOrigin: layout.transformOrigin,
-        transform: layout.transform,
-        opacity: layout.opacity,
-      }}
+      style={
+        {
+          width: layout.width,
+          transformOrigin: layout.transformOrigin,
+          opacity: layout.opacity,
+          // The transform is composed in the stylesheet. See the note on
+          // `PanelLayout.scale`: an inline transform cannot contain `var()`.
+          '--panel-x': `${layout.x}px`,
+          '--panel-scale': layout.scale,
+        } as CSSProperties
+      }
       onClick={(event) => {
         // The prototype ignored clicks that landed on a close control or on a
         // node a scene had marked as dragged.

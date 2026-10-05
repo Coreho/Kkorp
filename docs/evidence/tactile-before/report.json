@@ -1,0 +1,77 @@
+{
+  "label": "before",
+  "base": "http://127.0.0.1:4180",
+  "captured": "2026-10-05T07:50:57.494Z",
+  "widths": {
+    "1280px": {
+      "status": 200,
+      "panels": {
+        "about": {
+          "overflowX": 0,
+          "bodyScrollWidth": 1280,
+          "viewport": 1280
+        },
+        "blog": {
+          "overflowX": 0,
+          "bodyScrollWidth": 1280,
+          "viewport": 1280
+        },
+        "projects": {
+          "overflowX": 0,
+          "bodyScrollWidth": 1280,
+          "viewport": 1280
+        },
+        "chat": {
+          "overflowX": 0,
+          "bodyScrollWidth": 1280,
+          "viewport": 1280
+        }
+      },
+      "perf": {
+        "longestTaskMs": 71,
+        "longTaskCount": 4,
+        "domContentLoadedMs": 68,
+        "jsTransferredKB": 153.5,
+        "jsDecodedKB": 499.3,
+        "jsRequestCount": 7
+      },
+      "consoleErrors": 0,
+      "firstError": null
+    },
+    "390px": {
+      "status": 200,
+      "panels": {
+        "about": {
+          "overflowX": 0,
+          "bodyScrollWidth": 390,
+          "viewport": 390
+        },
+        "blog": {
+          "overflowX": 0,
+          "bodyScrollWidth": 390,
+          "viewport": 390
+        },
+        "projects": {
+          "overflowX": 0,
+          "bodyScrollWidth": 390,
+          "viewport": 390
+        },
+        "chat": {
+          "overflowX": 0,
+          "bodyScrollWidth": 390,
+          "viewport": 390
+        }
+      },
+      "perf": {
+        "longestTaskMs": 58,
+        "longTaskCount": 2,
+        "domContentLoadedMs": 41,
+        "jsTransferredKB": 153.5,
+        "jsDecodedKB": 499.3,
+        "jsRequestCount": 7
+      },
+      "consoleErrors": 0,
+      "firstError": null
+    }
+  }
+}

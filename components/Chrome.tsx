@@ -75,6 +75,11 @@ export function Nav({
   ];
   return (
     <nav className="cnav" id="cnav" aria-label="Sections" hidden={hidden}>
+      {/* The travelling indicator behind the active section. Painted here
+          rather than by `aria-current` so it can slide and squash; the
+          attribute itself is untouched, because the repository check and the
+          browser suite both pin it. */}
+      <span className="cnav-pill" aria-hidden="true" />
       <button
         type="button"
         className="cnav-arrow"
