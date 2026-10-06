@@ -1,8 +1,20 @@
 # KoreoKorp production architecture
 
-Status: **proposed** — settled by the owner for TASK-002, not yet built.
-Applies to: replacing the static prototype with an owner-editable site on the
-existing VPS.
+Status: **implemented through the application cutover (Stage 4)**.
+Applies to: the Next.js application running in two independent environments on
+the existing VPS.
+
+> **Current deployment.** Production is `koreokorp-prod` behind
+> `koreokorp.com`; staging is `koreokorp-app` behind
+> `staging.koreokorp.com`. Both run immutable images from the same
+> `koreokorp-app:<commit-sha12>` lineage. The former static production site was
+> retired on 2026-10-06 and is available only as an offline disaster archive.
+> See `docs/vps-deployment.md` for the authoritative current topology,
+> promotion, and rollback procedures.
+
+The remaining sections preserve the original architecture decisions and future
+content-system plan. Where historical staging/static language conflicts with
+the current deployment, `docs/vps-deployment.md` takes precedence.
 
 This document supersedes the hosting and backend decisions in
 `docs/codex-prompt.md`. That prompt remains the source of truth for the
