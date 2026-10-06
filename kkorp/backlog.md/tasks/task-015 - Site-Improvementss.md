@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-10-04 03:29'
-updated_date: '2026-10-06 14:16'
+updated_date: '2026-10-06 14:38'
 labels:
   - design
   - frontend
@@ -61,7 +61,7 @@ No new runtime dependencies. Nothing that assumes a scrollbar. No change to layo
 <!-- AC:BEGIN -->
 - [x] #1 No new runtime dependency is added: three, @react-three/fiber, drei, gsap, framer-motion and lenis are absent from package.json, and total client JavaScript for the built application does not exceed 620 KB.
 - [x] #2 Magnetic attraction and panel tilt are pointer-only: with a coarse pointer, no fine pointer, or keyboard-only navigation, nothing moves, and the site is fully operable.
-- [x] #3 prefers-reduced-motion: reduce stops continuous canvas animation and collapses added transitions, and every control remains reachable and usable. The hard-coded reduce flag in the canvas engines is removed rather than left false.
+- [x] #3 prefers-reduced-motion: reduce collapses the added CSS transitions and decorative animations and stops pointer tactility; by the owner decision of 2026-10-06 the jelly swarm animates fully regardless of the setting, and every control remains reachable and usable.
 - [x] #4 All interactive elements remain keyboard reachable with a visible focus indicator, and the section nav and all four panels can be operated without a pointer.
 - [x] #5 At 390px there is no horizontal overflow, and tilt or magnetic movement cannot push any content outside its panel or cause a scrollbar.
 - [x] #6 Text contrast and the committed palette are unchanged; grain opacity stays low enough that body text keeps its existing measured contrast ratio.
@@ -102,5 +102,10 @@ Owner review on staging found a real regression, and the review also caught me o
 created: 2026-10-06 14:16
 ---
 Reduced-motion repair verified end to end. Root cause: under prefers-reduced-motion the engines drew one physics frame and stopped, freezing the logo and panel icon before their springs reached the target. Blob.snap() now places every vertex at the settled target, the logo-load handler invalidates the still frame, and dispose removes the listener. New tests/app/animations.spec.js covers rendered flip cards (hover, leave, focus-visible, keyboard), the running kk-logo-orbit / kk-breathe-text / kk-pulse-border keyframes, the reduced-motion off states, and a landing to About to Blog to Projects to Lobby replay asserting painted docked-logo bounds under both motion settings; the engines reduced-motion test now waits out the async logo redraw before asserting stillness. Full app suite 30 passed / 0 flaky / 2 skipped (staging TLS only), npm test, lint, typecheck and build pass. Staging koreokorp-app:1989492169c5 verified in a real browser over TLS: jelly docked at every step in both motion settings, decorative animations wired, flip cards render, zero console errors. Production promoted to the same image, NPM host 9 restored to koreokorp-prod:3000, and the production TLS suite plus the same visual replay passed. The static container remains up but unrouted as a fallback. DoD#3 remains the owner judgement against the before/after evidence.
+---
+
+created: 2026-10-06 14:38
+---
+Owner decision 2026-10-06, made while reviewing the repair: the jelly is the site signature motion and must animate regardless of prefers-reduced-motion. The canvas engine reduced-motion branch and Blob.snap() are removed so the swarm always runs the springs; the CSS decoration (orbit ring, tagline, panel pulse, flip cards) and pointer tactility still collapse under the preference, and AC#3 is re-worded to match. Tests updated: the engines reduced-motion test now asserts the frame keeps changing and the logo still settles, and the animations replay waits for the springs under both settings. Verified on production koreokorp-app:a0f696cb46b5: under reduce the canvas produced 12/12, 12/12 and 14/14 distinct frames on landing, entering and navigation while the CSS animations reported none and the cards stayed unflipped; production and staging TLS suites pass; zero console errors.
 ---
 <!-- COMMENTS:END -->

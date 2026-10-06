@@ -20,23 +20,24 @@ It is not an active environment or deployment source.
 
 ## Current release
 
-The current production release is image `koreokorp-app:1989492169c5`, revision
-`1989492169c557912f44d182413572f320f84eb2`, promoted on 2026-10-06. It
-carries the reduced-motion jelly repair and the visible animation pass. Before
-promotion it passed the repository suite, `npm run lint`, `npm run typecheck`,
-`npm test`, `npm run build`, the full application suite (30 passed, 2
-staging-only tests skipped), and the staging TLS suite. After promotion the
-production TLS suite passed, and the landing → About → Blog → Projects → Lobby
-route was replayed in a real browser against both hosts under normal and
-reduced motion: the docked jelly stayed correctly placed at every step, the
-orbit ring, breathing tagline and panel pulse were present, the project cards
-flipped, and both runs logged zero console errors.
+The current production release is image `koreokorp-app:a0f696cb46b5`, revision
+`a0f696cb46b5df6247135f3f87c09b20cf5cf262`, promoted on 2026-10-06. It keeps
+the jelly swarm animating regardless of `prefers-reduced-motion` per the
+owner's decision; the CSS decoration (orbit ring, breathing tagline, panel
+pulse, flip cards) and pointer tactility still collapse under the preference.
+It also carries the visible animation pass. Before promotion it passed the
+repository suite, `npm run lint`, `npm run typecheck`, `npm test`,
+`npm run build`, the full application suite (30 passed, 2 staging-only tests
+skipped), and the staging TLS suite. After promotion the production TLS suite
+passed, and a frame probe confirmed the canvas animates under both settings
+(12/12, 12/12 and 14/14 distinct frames on landing, entering and navigation)
+while the CSS reduced-motion rules stayed applied and zero console errors were
+logged.
 
-The previous production image, `koreokorp-app:81003b0df5a7` (the first
-production application release), is recorded in `previous-release-prod`.
-Proxy host 9 targets `koreokorp-prod:3000`. The retired static container is
-still running but unrouted as a hot fallback; the archive above remains the
-documented disaster source.
+The previous production image, `koreokorp-app:1989492169c5`, is recorded in
+`previous-release-prod`. Proxy host 9 targets `koreokorp-prod:3000`. The
+retired static container is still running but unrouted as a hot fallback; the
+archive above remains the documented disaster source.
 
 ## Host files
 
