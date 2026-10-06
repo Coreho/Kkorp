@@ -27,7 +27,6 @@ import {
 } from './shapes';
 import { makeBlob, rgbStr, type Blob, type Placement } from './blob';
 import { fontsReady } from '../fonts';
-import { onReducedMotionChange, prefersReducedMotion } from '../motion';
 
 const TAU = Math.PI * 2;
 
@@ -148,8 +147,6 @@ export function mountSwarm(host: SwarmHost): Swarm {
   const logo = new Image();
   logo.decoding = 'async';
   logo.src = logoUrl.href;
-  const onLogoLoad = () => invalidate();
-  logo.addEventListener('load', onLogoLoad);
 
   let vw = 0;
   let vh = 0;
@@ -185,7 +182,6 @@ export function mountSwarm(host: SwarmHost): Swarm {
   let primed = false;
   let frame = 0;
   let disposed = false;
-  const reduced = () => prefersReducedMotion();
 
   const captionFor = (index: number): string => {
     switch (index) {
@@ -359,45 +355,21 @@ export function mountSwarm(host: SwarmHost): Swarm {
 
   }
 
-  // Under reduced motion the shapes must not animate continuously, but they
-  // still need to reposition when the visitor navigates. So the loop keeps
-  // running while state changes and otherwise holds a still frame.
-  let lastDrawnKey = '';
-
-  function stateKey(): string {
-    return [
-      host.landing ? 'l' : 'e',
-      host.currentPanel ?? '-',
-      state.partyUntil > 0 ? 'p' : '-',
-      Math.round(vw),
-      Math.round(vh),
-    ].join(':');
-  }
-
+  /**
+   * The swarm always animates.
+   *
+   * By the owner's 2026-10-06 decision the jelly ignores
+   * `prefers-reduced-motion`: the logo rise, the flight between panels and the
+   * idle breathing are the site's signature motion. The CSS decoration still
+   * collapses under the preference; only the canvas is ungated, so there is no
+   * still-frame branch left for a shape to get stuck in.
+   */
   function loop(t: number) {
     if (disposed) {
       return;
     }
     frame = requestAnimationFrame(loop);
-    if (reduced()) {
-      const key = stateKey();
-      if (key !== lastDrawnKey) {
-        lastDrawnKey = key;
-        // Reduced motion shows the destination, not the first frame of a
-        // spring that will never advance again.
-        logoBlob.snap(logoPlacement(), shapes, t);
-        pop.snap(popPlacement(), shapes, t);
-        drawFrame(t);
-      }
-      return;
-    }
-    lastDrawnKey = stateKey();
     drawFrame(t);
-  }
-
-  /** Force a redraw, e.g. when reduced motion is switched off. */
-  function invalidate() {
-    lastDrawnKey = '';
   }
 
   function holdCaption(html: string, holdMs: number) {
@@ -471,15 +443,14 @@ export function mountSwarm(host: SwarmHost): Swarm {
   }
 
   // Fonts must be ready before the first draw, or the cloud's question text is
-  // measured against a fallback face.
+  // measured against a fallback face. The loop redraws every frame, so the
+  // rebuilt shapes appear without an explicit invalidation.
   void fontsReady().then(() => {
     shapes = buildShapes();
     tail = cloudTrail();
-    invalidate();
   });
 
   frame = requestAnimationFrame(loop);
-  const stopMotionWatch = onReducedMotionChange(() => invalidate());
 
   const effects: SwarmEffects = {
     splash: (force) => logoBlob.splash(force),
@@ -505,8 +476,6 @@ export function mountSwarm(host: SwarmHost): Swarm {
       disposed = true;
       cancelAnimationFrame(frame);
       window.removeEventListener('resize', fit);
-      logo.removeEventListener('load', onLogoLoad);
-      stopMotionWatch();
       for (const id of timers) {
         window.clearTimeout(id);
       }

@@ -50,7 +50,6 @@ export interface Blob {
   scale: number;
   breathe: boolean;
   place(x: number, y: number, size: number): void;
-  snap(placement: Placement, shapes: Record<IconName, Point[]>, t: number): void;
   splash(force: number): void;
   step(target: StepEnv): void;
   draw(ctx: CanvasRenderingContext2D, draw: DrawEnv): void;
@@ -138,37 +137,6 @@ export function makeBlob(startX: number, startY: number): Blob {
         v.y = y;
         v.vx = 0;
         v.vy = 0;
-      }
-    },
-
-    /**
-     * Put the shape directly into its settled state.
-     *
-     * Reduced-motion mode intentionally skips the spring simulation. Merely
-     * drawing its first physics frame leaves every vertex collapsed at the
-     * centre, which is the tiny, malformed jelly the owner reported.
-     */
-    snap(placement, shapes, t) {
-      const target = shapes[placement.icon];
-      const scale = placement.size / 2;
-      centre.x = placement.x;
-      centre.y = placement.y;
-      centre.vx = 0;
-      centre.vy = 0;
-      centre.size = placement.size;
-      centre.rot = 0;
-      blob.icon = placement.icon;
-      blob.iconAt = t - 1000;
-      blob.rgb = [...placement.rgb];
-      blob.speed = 0;
-      blob.scale = scale;
-      for (let i = 0; i < VERTICES; i++) {
-        const vertex = vertices[i] as Vertex;
-        const point = target[i] as Point;
-        vertex.x = placement.x + point[0] * scale;
-        vertex.y = placement.y + point[1] * scale;
-        vertex.vx = 0;
-        vertex.vy = 0;
       }
     },
 

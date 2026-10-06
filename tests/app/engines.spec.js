@@ -225,7 +225,7 @@ test('chat commands and the Konami code reach the front-page caption', async ({ 
   expect(errors).toEqual([]);
 });
 
-test('reduced motion holds a still frame but keeps the site usable', async ({ page }) => {
+test('reduced motion keeps the jelly animating and the site usable', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
 
@@ -256,8 +256,7 @@ test('reduced motion holds a still frame but keeps the site usable', async ({ pa
       return x1 < 0 ? null : { x0, y0, x1, y1, w: x1 - x0, h: y1 - y0 };
     }, minY);
 
-  // The static reduced-motion frame must be the fully settled landing logo,
-  // not the half-size seed frame frozen before its springs can advance.
+  // The landing logo still rises and settles at its full size.
   await expect.poll(async () => (await paintedBounds())?.w ?? 0).toBeGreaterThan(700);
   await expect.poll(async () => (await paintedBounds())?.h ?? 0).toBeGreaterThan(150);
 
@@ -277,31 +276,17 @@ test('reduced motion holds a still frame but keeps the site usable', async ({ pa
       return sum;
     });
 
-  // The swarm must still paint something, and must not keep animating. The
-  // logo artwork loads asynchronously and triggers exactly one redraw when it
-  // arrives, so wait for the frame to stop changing before asserting it holds
-  // still; a continuously animating swarm never satisfies this stability wait.
-  const settle = async () => {
-    let previous = await sample();
-    for (let i = 0; i < 12; i++) {
-      await page.waitForTimeout(400);
-      const next = await sample();
-      if (next === previous) {
-        return previous;
-      }
-      previous = next;
-    }
-    return previous;
-  };
-  const first = await settle();
+  // Owner decision 2026-10-06: the jelly is the site's signature motion and
+  // animates regardless of the preference, so the frame must keep changing.
+  // The CSS decoration still collapses under the same preference, which
+  // tests/app/animations.spec.js pins.
+  const first = await sample();
   expect(first).not.toBe(0);
-  await page.waitForTimeout(1500);
-  expect(await sample()).toBe(first);
+  await expect.poll(sample).not.toBe(first);
 
-  // Navigation still repositions the shapes even with motion reduced.
+  // Navigation still repositions the shapes, and the site stays usable.
   await page.locator('[data-i="2"]').click();
   await expect.poll(async () => (await paintedBounds(120))?.h ?? 0).toBeGreaterThan(150);
-  expect(await sample()).not.toBe(first);
 
   await expect(page.locator('[data-i="2"]')).toHaveAttribute('aria-current', 'true');
   expect(errors).toEqual([]);

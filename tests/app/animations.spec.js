@@ -452,9 +452,9 @@ test.describe('visible animations', () => {
           'data-panel',
           panel,
         );
-        // Normal motion needs the springs to settle; reduced motion snaps in
-        // one frame.
-        await page.waitForTimeout(reducedMotion === 'reduce' ? 300 : 2600);
+        // The jelly animates under both motion settings (owner decision), so both
+        // passes need the springs to settle.
+        await page.waitForTimeout(2600);
 
         // The docked logo lives in the centre column of the top band, centred
         // and about 162px wide. Only the logo paints there; the panel icon sits
