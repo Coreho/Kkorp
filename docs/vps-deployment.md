@@ -20,11 +20,23 @@ It is not an active environment or deployment source.
 
 ## Current release
 
-The first production application release is image
-`koreokorp-app:81003b0df5a7`, revision
-`81003b0df5a7a36d038c3767ba25173c2b6b4f6a`. It was promoted on
-2026-10-06 after the repository suite, application suite, staging TLS suite,
-and production TLS suite passed.
+The current production release is image `koreokorp-app:1989492169c5`, revision
+`1989492169c557912f44d182413572f320f84eb2`, promoted on 2026-10-06. It
+carries the reduced-motion jelly repair and the visible animation pass. Before
+promotion it passed the repository suite, `npm run lint`, `npm run typecheck`,
+`npm test`, `npm run build`, the full application suite (30 passed, 2
+staging-only tests skipped), and the staging TLS suite. After promotion the
+production TLS suite passed, and the landing → About → Blog → Projects → Lobby
+route was replayed in a real browser against both hosts under normal and
+reduced motion: the docked jelly stayed correctly placed at every step, the
+orbit ring, breathing tagline and panel pulse were present, the project cards
+flipped, and both runs logged zero console errors.
+
+The previous production image, `koreokorp-app:81003b0df5a7` (the first
+production application release), is recorded in `previous-release-prod`.
+Proxy host 9 targets `koreokorp-prod:3000`. The retired static container is
+still running but unrouted as a hot fallback; the archive above remains the
+documented disaster source.
 
 ## Host files
 

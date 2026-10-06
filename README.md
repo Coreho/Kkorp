@@ -1,34 +1,42 @@
 # Kkorp
 
-KoreoKorp V2 is a single-file, interactive website mockup with an editorial carousel, animated canvas scenes, and a scripted retro chat room.
+KoreoKorp V2 is the Next.js application at **https://koreokorp.com**: an
+editorial carousel, hand-written canvas engines (the jelly swarm, dot fields
+and panel scenes), a blog, projects, and a scripted retro chat room. The
+original single-file prototype in `mockups/koreokorp-v2/index.html` is retained
+as the visual and behavioural reference, not as a deployable site.
 
 ## Local development
 
 ```powershell
 npm ci
 npm run install:browsers
-npm run dev
+npm run dev:app
 ```
 
-Open `http://127.0.0.1:4173`. The development server maps `/` to `mockups/koreokorp-v2/index.html` and serves the rest of the repository for local assets.
+Open `http://127.0.0.1:4180`. `npm run dev` still serves the historical
+prototype from `mockups/koreokorp-v2/index.html` at `http://127.0.0.1:4173`.
 
 ## Quality checks
 
 ```powershell
 npm run check          # Validate required files and markup invariants
-npm test               # Run repository checks and Playwright smoke tests
-npm run test:e2e       # Run only the browser tests
+npm test               # Repository checks and the prototype smoke tests
+npm run lint           # ESLint across the repository
+npm run typecheck      # tsc --noEmit
+npm run build          # Next.js production build
+npm run test:app       # Playwright suite against the built application
+npm run test:e2e       # Run only the prototype browser tests
 npm run test:e2e:ui    # Open Playwright's interactive test runner
 ```
 
-There is no production build step. The deployable site is the static content in `mockups/koreokorp-v2/`. See `docs/codex-vps-deploy-prompt.md` for a copy-ready VPS deployment handoff.
-
-The current site runs at **https://koreokorp.com** on the VPS. See
-[deployment notes](docs/vps-deployment.md) for updates and rollback.
-
-The planned replacement — an owner-editable application on this same VPS — is
-specified in [production architecture](docs/production-architecture.md). It is
-a decision record, not a description of anything running yet.
+The deployable application is built with `npm run build` and shipped as the
+immutable `koreokorp-app:<sha12>` Docker image. Production and staging run the
+same codebase as separate containers (`koreokorp-prod` and `koreokorp-app`);
+see [deployment notes](docs/vps-deployment.md) for the deploy, promote and
+rollback procedure, and
+[production architecture](docs/production-architecture.md) for the decision
+record.
 
 ## Task management
 
