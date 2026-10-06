@@ -232,8 +232,37 @@ test('reduced motion holds a still frame but keeps the site usable', async ({ pa
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/');
+
+  const paintedBounds = (minY = 0) =>
+    page.evaluate((startY) => {
+      const canvas = document.querySelector('canvas.pixelfield');
+      const ctx = canvas.getContext('2d');
+      const { width, height } = canvas;
+      const { data } = ctx.getImageData(0, 0, width, height);
+      let x0 = Infinity;
+      let y0 = Infinity;
+      let x1 = -1;
+      let y1 = -1;
+      for (let y = startY; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          if (data[(y * width + x) * 4 + 3] > 40) {
+            x0 = Math.min(x0, x);
+            y0 = Math.min(y0, y);
+            x1 = Math.max(x1, x);
+            y1 = Math.max(y1, y);
+          }
+        }
+      }
+      return x1 < 0 ? null : { x0, y0, x1, y1, w: x1 - x0, h: y1 - y0 };
+    }, minY);
+
+  // The static reduced-motion frame must be the fully settled landing logo,
+  // not the half-size seed frame frozen before its springs can advance.
+  await expect.poll(async () => (await paintedBounds())?.w ?? 0).toBeGreaterThan(700);
+  await expect.poll(async () => (await paintedBounds())?.h ?? 0).toBeGreaterThan(150);
+
   await page.getByRole('button', { name: 'Enter KoreoKorp' }).click();
-  await page.waitForTimeout(1200);
+  await expect.poll(async () => (await paintedBounds(120))?.w ?? 0).toBeGreaterThan(220);
 
   const sample = () =>
     page.evaluate(() => {
@@ -248,15 +277,30 @@ test('reduced motion holds a still frame but keeps the site usable', async ({ pa
       return sum;
     });
 
-  // The swarm must still paint something, and must not keep animating.
-  const first = await sample();
+  // The swarm must still paint something, and must not keep animating. The
+  // logo artwork loads asynchronously and triggers exactly one redraw when it
+  // arrives, so wait for the frame to stop changing before asserting it holds
+  // still; a continuously animating swarm never satisfies this stability wait.
+  const settle = async () => {
+    let previous = await sample();
+    for (let i = 0; i < 12; i++) {
+      await page.waitForTimeout(400);
+      const next = await sample();
+      if (next === previous) {
+        return previous;
+      }
+      previous = next;
+    }
+    return previous;
+  };
+  const first = await settle();
   expect(first).not.toBe(0);
   await page.waitForTimeout(1500);
   expect(await sample()).toBe(first);
 
   // Navigation still repositions the shapes even with motion reduced.
   await page.locator('[data-i="2"]').click();
-  await page.waitForTimeout(1200);
+  await expect.poll(async () => (await paintedBounds(120))?.h ?? 0).toBeGreaterThan(150);
   expect(await sample()).not.toBe(first);
 
   await expect(page.locator('[data-i="2"]')).toHaveAttribute('aria-current', 'true');

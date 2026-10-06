@@ -24,6 +24,24 @@ const POSTS = [
   },
 ];
 
+const PROJECTS = [
+  {
+    title: 'KoreoKorp V2',
+    description: 'This site. Four panels, one blog, one chat room.',
+    reverse: 'Next.js · canvas engines · realtime-ready',
+  },
+  {
+    title: 'The Lobby',
+    description: 'A shared chat room with screen names and two resident bots.',
+    reverse: 'Screen names · one shared room · two resident bots',
+  },
+  {
+    title: 'Placeholder project',
+    description: 'Swap in a real project, link, or screenshot.',
+    reverse: 'Your next project could live here',
+  },
+] as const;
+
 /**
  * The rotating About caption.
  *
@@ -183,6 +201,31 @@ export function BlogBody() {
   );
 }
 
+function ProjectCard({
+  title,
+  description,
+  reverse,
+}: (typeof PROJECTS)[number]) {
+  return (
+    <button
+      className="project-flip"
+      type="button"
+      aria-label={`${title} flip card`}
+    >
+      <span className="project-flip-inner">
+        <span className="project-face project-front">
+          <strong>{title}</strong>
+          <span>{description}</span>
+          <small>Flip card</small>
+        </span>
+        <span className="project-face project-back" aria-hidden="true">
+          <span>{reverse}</span>
+        </span>
+      </span>
+    </button>
+  );
+}
+
 export function ProjectsBody() {
   return (
     <>
@@ -204,18 +247,9 @@ export function ProjectsBody() {
         </div>
         <div className="detail">
           <div className="proj">
-            <div>
-              <strong>KoreoKorp V2</strong>
-              <span>This site. Four panels, one blog, one chat room.</span>
-            </div>
-            <div>
-              <strong>The Lobby</strong>
-              <span>A shared chat room with screen names and two resident bots.</span>
-            </div>
-            <div>
-              <strong>Placeholder project</strong>
-              <span>Swap in a real project, link, or screenshot.</span>
-            </div>
+            {PROJECTS.map((project) => (
+              <ProjectCard key={project.title} {...project} />
+            ))}
           </div>
         </div>
         <Action label="See projects" />

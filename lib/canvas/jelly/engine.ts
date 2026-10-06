@@ -148,6 +148,8 @@ export function mountSwarm(host: SwarmHost): Swarm {
   const logo = new Image();
   logo.decoding = 'async';
   logo.src = logoUrl.href;
+  const onLogoLoad = () => invalidate();
+  logo.addEventListener('load', onLogoLoad);
 
   let vw = 0;
   let vh = 0;
@@ -381,6 +383,10 @@ export function mountSwarm(host: SwarmHost): Swarm {
       const key = stateKey();
       if (key !== lastDrawnKey) {
         lastDrawnKey = key;
+        // Reduced motion shows the destination, not the first frame of a
+        // spring that will never advance again.
+        logoBlob.snap(logoPlacement(), shapes, t);
+        pop.snap(popPlacement(), shapes, t);
         drawFrame(t);
       }
       return;
@@ -499,6 +505,7 @@ export function mountSwarm(host: SwarmHost): Swarm {
       disposed = true;
       cancelAnimationFrame(frame);
       window.removeEventListener('resize', fit);
+      logo.removeEventListener('load', onLogoLoad);
       stopMotionWatch();
       for (const id of timers) {
         window.clearTimeout(id);

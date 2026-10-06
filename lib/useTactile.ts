@@ -47,7 +47,7 @@ import {
 } from './tactile';
 
 /** Nav items and the chat window's own buttons are the magnetic controls. */
-const MAGNETIC = '#cnav button, .bevel';
+const MAGNETIC = '#cnav button, .bevel, .project-flip';
 
 /** Degrees of lean for the open panel, and for a peeking neighbour. */
 const TILT_OPEN = 3.2;
