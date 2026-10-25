@@ -13,16 +13,15 @@ test('published content updates the React panels and safely renders complete ent
   await page.getByRole('button', { name: 'Enter KoreoKorp' }).click();
   await expect(page.locator('[data-panel="about"] h2')).toContainText('Behind the scenes');
   await page.locator('[data-i="1"]').click();
-  await page.locator('.published-post summary').click();
-  await expect(page.locator('.post-body')).toHaveText('An entry with <script>literal text</script>.');
-  await expect(page.locator('.post-body script')).toHaveCount(0);
+  // The entry itself opens on its own page; tests/app/blog.spec.js covers it.
+  await expect(page.getByRole('link', { name: /From the workshop/ })).toHaveAttribute('href', '/blog/from-the-workshop');
   await page.locator('[data-i="2"]').click();
   const tile = page.getByRole('link', { name: /Pocket radio/ });
   await expect(tile).toHaveAttribute('href', 'https://example.com/radio');
   await expect(tile).toHaveAttribute('target', '_blank');
-  const bounds = await tile.boundingBox();
-  expect(bounds.width).toBeLessThanOrEqual(281);
-  expect(bounds.height).toBeCloseTo(220, 0);
+  // Measured once the slide has settled: while it moves in, the panel is scaled.
+  await expect.poll(async () => (await tile.boundingBox()).height).toBeCloseTo(220, 0);
+  expect((await tile.boundingBox()).width).toBeLessThanOrEqual(281);
   await tile.hover();
   await expect.poll(() => tile.evaluate((el) => Number(getComputedStyle(el).scale))).toBeGreaterThan(1.03);
   expect(await tile.evaluate((el) => getComputedStyle(el).boxShadow)).not.toBe('none');

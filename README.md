@@ -31,6 +31,25 @@ images at `/uploads/`. Run `npm run admin:password` once to set the owner
 password, restart the server, then sign in at `/admin`. Content, the password
 hash and uploads are stored in `data/` (ignored by Git). See
 [the admin guide](docs/admin-panel.md) for editing, sessions and limits.
+The server also answers `GET /api/health`, and `npm run health:check` checks
+the live site, the content API and the editor; a scheduled workflow runs it
+every ten minutes (see [monitoring](docs/monitoring.md)).
+
+**Blog entries.** Each published entry has its own page at `/blog/<slug>`,
+linked from the Blog slide; "All entries" returns to `/#blog`. The address
+comes from the title the first time an entry is saved and stays fixed once it
+is published, so renaming a published entry keeps its link. Drafts and unknown
+addresses show "Entry not found". Bodies are Markdown: paragraphs (single line
+breaks are kept), `##` headings, bold, italic, `code`, links, bulleted and
+numbered lists, quotes, fenced code and rules. Raw HTML is shown as text, and
+links keep only http(s), mailto and same-site addresses. The reader is
+`lib/markdown.ts` rather than a library, because the client JavaScript budget
+has no room for one; nested lists, tables and inline images are not supported.
+The budget test in `tests/app/tactile.spec.js` caps the home page at 620 KiB
+(every emitted chunk except those only entry pages load) and an entry page's
+own chunks at 15 KiB. Entry pages read the same `/api/content` as the carousel in the
+browser, so a missing entry shows its not-found page with status 200 and
+`noindex`; only malformed addresses return a real 404.
 
 **Control service image.** Production runs the same server as the
 `koreokorp-control` container:
@@ -44,6 +63,23 @@ used on the VPS. It mounts persistent content at `/data` and joins the private
 proxy network without publishing a host port.
 
 ## Quality checks
+
+CI runs on every pull request and push to `main`. All of these checks must
+pass before merging:
+
+- Repository checks and the prototype/editor browser suite (`npm test`, which
+  runs `npm run check` followed by `playwright test`).
+- ESLint (`npm run lint`) and TypeScript (`npm run typecheck`).
+- The production application build (`npm run build`) and the full application
+  browser suite (`CI=1 npm run test:app`), including the 620 KiB client
+  JavaScript ceiling.
+- Both Docker image builds, without pushing: `docker build -t
+  koreokorp-app:ci-local .` and `docker build -f deploy/Dockerfile.control -t
+  koreokorp-control:ci-local .`, each using the repository root as its context.
+
+The prototype/editor, lint/typecheck, application and Docker build jobs run independently.
+Failed browser suites upload `test-results/` and `playwright-report/` under
+distinct artifact names, retained for seven days.
 
 ```powershell
 npm run check          # Validate required files and markup invariants
@@ -71,6 +107,11 @@ with content on persistent disk at `/var/lib/koreokorp-content`.
 [The admin deployment record](docs/admin-deployment.md) covers its proxy
 routes, password reset, backups and rollback. The Caddy and systemd files in
 `deploy/` are alternatives for a fresh VPS, not the live configuration.
+
+Editor content is backed up daily on the VPS and copied to the owner's
+computer by a scheduled task; see
+[content backups](docs/admin-deployment.md#content-backups) for checking and
+restoring. `www.koreokorp.com` redirects to `https://koreokorp.com`.
 
 ## Task management
 

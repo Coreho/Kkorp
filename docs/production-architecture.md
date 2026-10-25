@@ -12,6 +12,16 @@ the existing VPS.
 > See `docs/vps-deployment.md` for the authoritative current topology,
 > promotion, and rollback procedures.
 
+> **Interim content service (2026-10-24).** Before Stage 2 started, an owner
+> editor was shipped on a file store instead of Supabase: the `koreokorp-control`
+> container serves `https://adctrl.koreokorp.com` and `/api/content`, with one
+> scrypt-hashed owner password and JSON plus uploads on the VPS disk. See
+> `docs/admin-deployment.md`. On 2026-10-25 the owner reaffirmed decision-001:
+> Supabase remains the target for content, auth and media. TASK-017 migrates the
+> live content and sign-in to Supabase without losing what the editor does
+> today, then retires the file store. TASK-022 backs up the file store until
+> then.
+
 The remaining sections preserve the original architecture decisions and future
 content-system plan. Where historical staging/static language conflicts with
 the current deployment, `docs/vps-deployment.md` takes precedence.
@@ -319,7 +329,7 @@ one is verified in production.
 | 2 | Supabase project, migrations, RLS, content read path with fallbacks | new task | static, untouched |
 | 3 | Design audit | TASK-006 | static, runs on the prototype in parallel |
 | 4 | Cut over `koreokorp.com` to `koreokorp-app`; keep `koreokorp-web` idle as rollback target | new task | **now served by the app** |
-| 5 | Owner authentication and admin shell | TASK-009 | app |
+| 5 | Owner authentication and admin shell | TASK-009 (met on 2026-10-24 by the interim file-backed editor; moves to Supabase Auth in TASK-017) | app |
 | 6 | Public blog index and post pages | TASK-003 | app |
 | 7 | Blog authoring | TASK-004 | app |
 | 8 | Project collection, then rich previews | TASK-012, TASK-013 | app |
@@ -360,7 +370,7 @@ stage that depends on it.
 | 3 | Bot model provider | OpenRouter free models, server-only, 10 s timeout, canned fallback. Unchanged from `docs/codex-prompt.md` | DRAFT-008 only |
 | 4 | Custom SMTP for Supabase Auth | Not now. Password auth needs no email. Revisit if magic link is wanted | not blocking |
 | 5 | Admin password and its off-box copy | Owner's call; the credential is the site's only privileged secret | Stage 5 |
-| 6 | Whether `www.koreokorp.com` is configured | Separate draft-001, still open; an alias is trivial once the app is running | not blocking |
+| 6 | Whether `www.koreokorp.com` is configured | Done 2026-10-25 (TASK-026): one 301 to `https://koreokorp.com`, path and query preserved | not blocking |
 | 7 | Telegram/Discord/webhook notifications for deploy failures | Not now; read logs instead. Revisit if deploys become unattended | not blocking |
 
 ### Self-hosted alternative, for the record

@@ -150,7 +150,8 @@ function renderEntry() {
     field(form, 'excerpt', 'Short introduction', entry.excerpt, 'textarea', false, 1000);
     const body = field(form, 'body', 'Post text', entry.body, 'textarea', true, 100000);
     body.className = 'body-input';
-    form.append(node('p', 'Write in plain text. Blank lines separate paragraphs. The date labels your entry; publishing makes it live immediately.', 'helper'));
+    form.append(node('p', 'Blank lines separate paragraphs. Markdown works for headings, **bold**, *italic*, links, lists, quotes, and code. The date labels your entry; publishing makes it live immediately.', 'helper'));
+    if (item?.slug && item.status === 'published') form.append(node('p', `Web address: /blog/${item.slug}`, 'helper'));
   } else {
     field(form, 'description', 'Project description', entry.description, 'textarea', true, 10000);
     field(form, 'url', 'Project link (optional)', entry.url, 'url', false, 2000);
@@ -231,6 +232,8 @@ function renderEntry() {
     const values = Object.fromEntries(new FormData(form));
     delete values['image-file'];
     const value = { ...values, id, status, image: currentImage };
+    // Once published, a post keeps its address; drafts take theirs from the latest title.
+    if (item?.slug && item.status === 'published') value.slug = item.slug;
     const index = next[section].findIndex((value) => value.id === id);
     if (index < 0) next[section].unshift(value);
     else next[section][index] = value;

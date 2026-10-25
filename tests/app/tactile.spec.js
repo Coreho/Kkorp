@@ -628,16 +628,26 @@ test.describe('tactility', () => {
       expect(deps[banned]).toBeUndefined();
     }
 
-    // AC#1 caps the built client JavaScript. Measured over every chunk the build
-    // emits, which is the figure the criterion was written against.
+    // AC#1 caps the built client JavaScript at 620 KiB, written when the home
+    // page was the only page. Every chunk the build emits still counts, polyfills
+    // included, except chunks that only other pages load: a blog entry's code
+    // never reaches the home page, so it has its own cap below.
     const dir = path.resolve('.next/static/chunks');
     const files = (await readdir(dir)).filter((f) => f.endsWith('.js'));
-    let total = 0;
+    const size = {};
     for (const f of files) {
-      total += (await stat(path.join(dir, f))).size;
+      size[f] = (await stat(path.join(dir, f))).size;
     }
-    const kb = total / 1024;
-    expect(kb).toBeLessThanOrEqual(620);
+    // Each page's client reference manifest names the chunks that page loads.
+    const pageChunks = async (manifest) =>
+      new Set((await readFile(path.resolve('.next/server/app', manifest), 'utf8')).match(/(?<=static\/chunks\/)[\w.-]+\.js/g) ?? []);
+    const home = await pageChunks('page_client-reference-manifest.js');
+    const entry = await pageChunks('blog/[slug]/page_client-reference-manifest.js');
+    const entryOnly = [...entry].filter((f) => !home.has(f));
+    const kib = (names) => names.reduce((total, f) => total + (size[f] ?? 0), 0) / 1024;
+    expect(entryOnly.length).toBeGreaterThan(0);
+    expect(kib(files.filter((f) => !entryOnly.includes(f)))).toBeLessThanOrEqual(620);
+    expect(kib(entryOnly)).toBeLessThanOrEqual(15);
   });
 
   test('no listener or frame request is left behind', async ({ page }) => {

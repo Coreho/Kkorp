@@ -44,7 +44,31 @@ This prompts privately for the new password and revokes existing sessions. Updat
 
 ## Backups and rollback
 
-Private proxy/database backups and the original host settings are under `/opt/stacks/koreokorp/backups/admin-20261024`. Do not restore the entire proxy database casually: it also manages unrelated applications. The content directory needs regular secure backups of its JSON files and uploads together.
+Private proxy/database backups and the original host settings are under `/opt/stacks/koreokorp/backups/admin-20261024`. Do not restore the entire proxy database casually: it also manages unrelated applications.
+
+### Content backups
+
+Since 2026-10-25 (TASK-022) the content directory is backed up daily. This is interim: TASK-017 replaces it with database dumps and a media sync when content moves to Supabase.
+
+- **On the VPS.** `korebear`'s crontab runs [`deploy/backup-content.sh`](../deploy/backup-content.sh), installed at `~/koreokorp-backup/backup-content.sh`, at 03:17 UTC. Each snapshot is `~/backups/koreokorp-content/daily/koreokorp-content-<UTC stamp>.tar.gz` with a `.sha256` beside it, and contains `content.json` (published and draft entries), `admin-auth.json` (the password hash) and `uploads/`. `content.json` is copied before `uploads/`, and a snapshot whose content references a missing upload is refused rather than saved. The newest 14 daily snapshots and the first snapshot of each of the last 8 ISO weeks (`weekly/`) are kept. `latest` names the newest snapshot, and every run appends a line to `backup.log`. The folder is mode 700.
+- **On the owner's computer.** The Windows scheduled task **KoreoKorp content backup pull** runs [`deploy/pull-content-backups.ps1`](../deploy/pull-content-backups.ps1) daily at 09:30 local time, or at the next logon if the computer was off. A copy of the script lives in `%USERPROFILE%\KoreoKorp-backups`. It asks the server whether its newest snapshot is recent, downloads it over the owner's SSH configuration (host alias `digihoe`), checks the SHA-256, keeps the newest 30, and appends to `pull.log`. The folder is readable only by the owner's Windows account, because each snapshot holds the password hash.
+
+**Checking backups.** On the VPS, `~/koreokorp-backup/backup-content.sh --check` exits 1 unless the newest snapshot is under 26 hours old. On the computer, `powershell -ExecutionPolicy Bypass -File %USERPROFILE%\KoreoKorp-backups\pull-content-backups.ps1 -Check` does the same for the local copies (50 hours). A failed pull is a `FAIL` line in `pull.log` and a non-zero **Last Run Result** in Task Scheduler.
+
+**Restoring.** Pick a snapshot and verify it, then swap the directory while the service is stopped:
+
+```sh
+cd ~/backups/koreokorp-content/daily && sha256sum -c koreokorp-content-<stamp>.tar.gz.sha256
+docker stop koreokorp-control
+sudo mv /var/lib/koreokorp-content /var/lib/koreokorp-content.before-restore-$(date -u +%Y%m%dT%H%M%SZ)
+sudo install -d -m 700 -o korebear -g korebear /var/lib/koreokorp-content
+tar -xzf koreokorp-content-<stamp>.tar.gz -C /var/lib/koreokorp-content
+docker start koreokorp-control
+```
+
+Then run `npm run health:check` and sign in to the editor. The old directory stays beside it until the restore is confirmed.
+
+**Rehearsal, 2026-10-25.** The first snapshot (`koreokorp-content-20261025T061210Z`, 93,431 bytes) was unpacked into a scratch folder and served by a scratch container from the live `koreokorp-control:20261024` image on `127.0.0.1:4199`. Its public `/api/content`, its `content.json` and `admin-auth.json`, and the one referenced upload all had the same SHA-256 as production, and its editor host served the sign-in page. The scratch container and folder were then removed.
 
 To roll back only the public application to the previously live image:
 
