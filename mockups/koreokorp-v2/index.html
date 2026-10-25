@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>KoreoKorp V2 Mockup</title>
+<link rel="stylesheet" href="./content.css">
+<script type="module" src="./content.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Montserrat:wght@400;500;600;700&display=swap">
@@ -1140,7 +1142,7 @@ h2 {
     <button class="close" aria-label="Close panel"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
     <div class="inner">
       <div class="eyebrow">KoreoKorp · V2</div>
-      <h2>About <span class="section-no" aria-hidden="true">01</span></h2>
+      <h2><span data-heading>About</span> <span class="section-no" aria-hidden="true">01</span></h2>
       <div class="rest stack">
         <p class="blurb">A small corner of the internet. Posts, projects, and a chat room you can walk into with nothing but a screen name.</p>
         <p class="now" data-now aria-live="polite"></p>
@@ -1178,22 +1180,19 @@ h2 {
     <button class="close" aria-label="Close panel"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
     <div class="inner">
       <div class="eyebrow">Journal</div>
-      <h2>Blog <span class="section-no" aria-hidden="true">02</span></h2>
+      <h2><span data-heading>Blog</span> <span class="section-no" aria-hidden="true">02</span></h2>
       <div class="rest stack">
         <p class="blurb">Notes and updates, written from the admin page and published here.</p>
         <div class="latest">
           <small>Latest post</small>
-          <strong>Rebuilding KoreoKorp from scratch</strong>
-          <span>Sep 29, 2026 · 4 min read</span>
+          <strong>The journal</strong>
+          <span>Notes and updates from KoreoKorp.</span>
         </div>
       </div>
       <div class="detail">
         <ul class="post-list">
-          <li><time datetime="2026-09-29">Sep 29, 2026</time><div><strong>Rebuilding KoreoKorp from scratch</strong><p>Why V2 is Next.js, Supabase and Vercel, and why it still has a chat room.</p></div></li>
-          <li><time datetime="2026-09-12">Sep 12, 2026</time><div><strong>Meet the bots</strong><p>Two AI regulars live in the lobby. They argue so you don't have to.</p></div></li>
-          <li><time datetime="2026-08-30">Aug 30, 2026</time><div><strong>Screen names are back</strong><p>No login, no email. Pick a name and you're in.</p></div></li>
         </ul>
-        <p class="admin-note">Sample posts. Real ones come from the <code>posts</code> table, written at <code>/admin</code>.</p>
+        <p class="admin-note">The journal is waiting for its first entry.</p>
       </div>
       <button class="action" data-open><span>Read the blog</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></button>
     </div>
@@ -1206,7 +1205,7 @@ h2 {
     <button class="close" aria-label="Close panel"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3l10 10M13 3L3 13"/></svg></button>
     <div class="inner">
       <div class="eyebrow">Work</div>
-      <h2>Projects <span class="section-no" aria-hidden="true">03</span></h2>
+      <h2><span data-heading>Projects</span> <span class="section-no" aria-hidden="true">03</span></h2>
       <div class="rest stack">
         <p class="blurb">Things being built, tried, and occasionally finished.</p>
         <div class="tags"><span>Next.js</span><span>Supabase</span><span>Realtime chat</span><span>AI bots</span></div>
@@ -1215,7 +1214,6 @@ h2 {
         <div class="proj">
           <div><strong>KoreoKorp V2</strong><span>This site. Four panels, one blog, one chat room.</span></div>
           <div><strong>The Lobby</strong><span>A shared chat room with screen names and two resident bots.</span></div>
-          <div><strong>Placeholder project</strong><span>Swap in a real project, link, or screenshot.</span></div>
         </div>
       </div>
       <button class="action" data-open><span>See projects</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></button>
@@ -1231,7 +1229,7 @@ h2 {
     <div class="inner">
       <div class="rest col">
         <div class="eyebrow">The Lobby</div>
-        <h2>Chat room <span class="section-no" aria-hidden="true">04</span></h2>
+        <h2><span data-heading>Chat room</span> <span class="section-no" aria-hidden="true">04</span></h2>
         <p class="blurb">One shared room. Pick a screen name and jump in. Two bots are always here, and they never stop talking.</p>
         <div class="online"><i></i><span id="onlineCount">5 in the room now</span></div>
         <ul class="preview" id="preview" aria-live="off"></ul>

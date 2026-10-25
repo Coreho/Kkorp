@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>KoreoKorp · Content control</title>
+  <link rel="stylesheet" href="/admin/admin.css">
+  <script type="module" src="/admin/admin.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to editor</a>
+  <section id="login" class="login" aria-labelledby="login-title">
+    <a class="brand" href="https://koreokorp.com"><img src="/assets/koreokorp-logo-cutout.webp" alt="KoreoKorp" width="160" height="80"></a>
+    <div class="login-content">
+      <h1 id="login-title">Welcome back.</h1>
+      <p>Your corner of the internet.<br>A place to keep it up to date.</p>
+      <form id="login-form">
+        <label for="password">Password</label>
+        <div class="password-row"><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="1024"><button type="button" id="show-password" aria-controls="password" aria-pressed="false">Show</button></div>
+        <button class="primary" type="submit">Sign in <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></button>
+      </form>
+      <p id="login-message" role="alert"></p>
+      <p class="security-note" id="transport-note">Checking connection…</p>
+    </div>
+    <footer>Content control · adctrl.koreokorp.com</footer>
+  </section>
+  <div id="workspace" hidden>
+    <aside class="sidebar">
+      <a class="brand" href="/"><img src="/assets/koreokorp-logo-cutout.webp" alt="KoreoKorp" width="144" height="72"></a>
+      <nav aria-label="Content sections">
+        <button data-section="pages" aria-current="page">Page text</button>
+        <button data-section="projects">Projects <span id="project-count">0</span></button>
+        <button data-section="posts">Blog entries <span id="post-count">0</span></button>
+      </nav>
+      <div class="sidebar-bottom"><a id="view-site" href="https://koreokorp.com" target="_blank" rel="noopener">View website <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18 18 6M6 6h12v12"/></svg></a><button id="logout">Sign out</button></div>
+    </aside>
+    <main id="main" tabindex="-1">
+      <header class="page-header"><div><h1 id="section-title">Page text</h1><p id="section-description">Make it sound like you. Saved changes appear on the website.</p></div><span class="connection">Content control</span></header>
+      <div class="notice" id="message" role="status" aria-live="polite"></div>
+      <div class="editor-layout">
+        <section id="collection" class="collection" hidden aria-label="Entries">
+          <button id="add-entry" class="primary" type="button">Add project</button>
+          <label class="search-label" for="search">Find an entry</label><input id="search" type="search" placeholder="Search by title">
+          <div id="entry-list"></div>
+        </section>
+        <div id="editor" class="editor"></div>
+      </div>
+      <footer class="editor-footer">KoreoKorp <span>Changes live here. Ideas live everywhere.</span></footer>
+    </main>
+  </div>
+</body>
+</html>

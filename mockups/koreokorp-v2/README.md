@@ -1,7 +1,6 @@
 # KoreoKorp V2 mockup
 
-A single-file, clickable mockup of the KoreoKorp V2 homepage. Open `index.html` in a browser; no build step.
-All content is sample data and the chat room is scripted (no backend yet).
+A clickable KoreoKorp V2 homepage with a file-backed content editor. Run `npm run dev` from the repository root; no build step. The chat room is still scripted.
 
 ## What's in it
 
@@ -18,7 +17,11 @@ All content is sample data and the chat room is scripted (no backend yet).
 
 ## Not done yet
 
-Real chat (Supabase Realtime), OpenRouter bots, the `/admin` blog editor, and the
-production application build. The planned architecture is in
+Real chat (Supabase Realtime), OpenRouter bots, and the production
+application build. The planned architecture is in
 `docs/production-architecture.md`; the earlier Vercel hosting assumption is
 void — the app deploys to the VPS alongside this prototype.
+
+## Content editor
+
+`/admin` supports password sign-in, page-copy editing, project/image uploads, and blog drafts, publishing, unpublishing, and deletion. Published content is loaded by `content.js` from the Node API. Initial blog entries are empty; the old entries were samples. See [setup and hosting](../../docs/admin-panel.md) for local credentials and HTTPS deployment at `adctrl.koreokorp.com`.

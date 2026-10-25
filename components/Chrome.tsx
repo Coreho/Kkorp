@@ -1,5 +1,7 @@
 'use client';
 
+import { useContent } from '@/lib/useContent';
+
 const Arrow = ({ d }: { d: string }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
     <path d={d} />
@@ -18,6 +20,7 @@ export function Landing({
   onEnter: () => void;
   entered: boolean;
 }) {
+  const { content: { pages } } = useContent();
   return (
     <section
       className={entered ? 'landing gone' : 'landing'}
@@ -36,9 +39,9 @@ export function Landing({
         <span>Est. 2026</span>
       </div>
       <div className="landing-copy">
-        <p className="landing-kicker">Signal found</p>
-        <p className="landing-tag">A small corner of the internet.</p>
-        <p className="landing-hint">Click the logo to enter</p>
+        <p className="landing-kicker">{pages.landingKicker}</p>
+        <p className="landing-tag">{pages.landingTag}</p>
+        <p className="landing-hint">{pages.landingHint}</p>
       </div>
     </section>
   );

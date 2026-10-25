@@ -1,34 +1,62 @@
 # Kkorp
 
+_Last updated: 2026-10-25_
+
 KoreoKorp V2 is the Next.js application at **https://koreokorp.com**: an
 editorial carousel, hand-written canvas engines (the jelly swarm, dot fields
-and panel scenes), a blog, projects, and a scripted retro chat room. The
-original single-file prototype in `mockups/koreokorp-v2/index.html` is retained
-as the visual and behavioural reference, not as a deployable site.
+and panel scenes), a blog, projects, and a scripted retro chat room. Page
+text, projects and blog entries are edited by the owner in a password-protected
+editor at **https://adctrl.koreokorp.com**, served by a separate content
+service. The original single-file prototype in
+`mockups/koreokorp-v2/index.html` is retained as the visual and behavioural
+reference, not as a deployable site.
 
 ## Local development
 
 ```powershell
 npm ci
 npm run install:browsers
-npm run dev:app
 ```
 
-Open `http://127.0.0.1:4180`. `npm run dev` still serves the historical
-prototype from `mockups/koreokorp-v2/index.html` at `http://127.0.0.1:4173`.
+**Application.** `npm run dev:app` serves the Next.js app at
+`http://127.0.0.1:4180`. It fetches published content from `/api/content`;
+locally nothing answers that route, so the app shows its bundled default copy.
+In production the proxy routes `/api/content` and `/uploads/` to the content
+service.
+
+**Editor and content service.** `npm run dev` starts the Node server in
+`scripts/serve.mjs` at `http://127.0.0.1:4173`. It serves the prototype at `/`,
+the editor at `/admin`, the public content API at `/api/content`, and uploaded
+images at `/uploads/`. Run `npm run admin:password` once to set the owner
+password, restart the server, then sign in at `/admin`. Content, the password
+hash and uploads are stored in `data/` (ignored by Git). See
+[the admin guide](docs/admin-panel.md) for editing, sessions and limits.
+
+**Control service image.** Production runs the same server as the
+`koreokorp-control` container:
+
+```powershell
+docker build -f deploy/Dockerfile.control -t koreokorp-control:local .
+```
+
+[`deploy/compose-control.yaml`](deploy/compose-control.yaml) is the Compose file
+used on the VPS. It mounts persistent content at `/data` and joins the private
+proxy network without publishing a host port.
 
 ## Quality checks
 
 ```powershell
 npm run check          # Validate required files and markup invariants
-npm test               # Repository checks and the prototype smoke tests
+npm test               # Repository checks, prototype smoke tests and editor tests
 npm run lint           # ESLint across the repository
 npm run typecheck      # tsc --noEmit
 npm run build          # Next.js production build
 npm run test:app       # Playwright suite against the built application
-npm run test:e2e       # Run only the prototype browser tests
+npm run test:e2e       # Run only the prototype and editor browser tests
 npm run test:e2e:ui    # Open Playwright's interactive test runner
 ```
+
+## Deployment
 
 The deployable application is built with `npm run build` and shipped as the
 immutable `koreokorp-app:<sha12>` Docker image. Production and staging run the
@@ -37,6 +65,12 @@ see [deployment notes](docs/vps-deployment.md) for the deploy, promote and
 rollback procedure, and
 [production architecture](docs/production-architecture.md) for the decision
 record.
+
+The editor runs as `koreokorp-control` behind the same Nginx Proxy Manager,
+with content on persistent disk at `/var/lib/koreokorp-content`.
+[The admin deployment record](docs/admin-deployment.md) covers its proxy
+routes, password reset, backups and rollback. The Caddy and systemd files in
+`deploy/` are alternatives for a fresh VPS, not the live configuration.
 
 ## Task management
 
@@ -56,7 +90,7 @@ your computer, leave `npm run backlog:browser` running on the VPS and open an
 SSH tunnel from your computer:
 
 ```bash
-ssh -N -L 6420:127.0.0.1:6420 -p 47823 korebear@173.230.140.70
+ssh -N -L 6420:127.0.0.1:6420 -p 47823 korebear@64.177.54.33
 ```
 
 Then open `http://127.0.0.1:6420` on your computer.
