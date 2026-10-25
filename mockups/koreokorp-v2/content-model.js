@@ -1,0 +1,68 @@
+// Keep public defaults independent of editor labels for a small client bundle.
+export const defaultPages = {
+  pageTitle: 'KoreoKorp V2 Mockup',
+  landingKicker: 'Signal found',
+  landingTag: 'A small corner of the internet.',
+  landingHint: 'Click the logo to enter',
+  aboutIntro: 'A small corner of the internet. Posts, projects, and a chat room you can walk into with nothing but a screen name.',
+  aboutBody: 'KoreoKorp is a small corner of the internet: posts, projects, and a chat room from 2003 living inside a modern website. No accounts, no feed. Pick a name and say hi.',
+  aboutHeading: 'About',
+  aboutAction: 'About',
+  email: 'you@koreokorp.com',
+  github: 'github.com/your-handle',
+  timeline1: 'Away messages, buddy lists, 56k.',
+  timelineYear1: '2003',
+  timeline2: 'KoreoKorp V1 goes up.',
+  timelineYear2: '20XX',
+  timeline3: 'V2: four panels, a blog, and The Lobby.',
+  timelineYear3: '2026',
+  blogHeading: 'Blog',
+  blogIntro: 'Notes and updates, written from the admin page and published here.',
+  blogAction: 'Read the blog',
+  projectsHeading: 'Projects',
+  projectsIntro: 'Things being built, tried, and occasionally finished.',
+  projectsAction: 'See projects',
+  chatHeading: 'Chat room',
+  chatIntro: 'One shared room. Pick a screen name and jump in. Two bots are always here, and they never stop talking.',
+  chatAction: 'Enter the room',
+};
+
+export const pageFields = [
+  ['Landing', 'pageTitle', 'Browser title', 'title', defaultPages.pageTitle],
+  ['Landing', 'landingKicker', 'Landing caption', '.landing-kicker', defaultPages.landingKicker],
+  ['Landing', 'landingTag', 'Tagline', '.landing-tag', defaultPages.landingTag],
+  ['Landing', 'landingHint', 'Entry hint', '.landing-hint', defaultPages.landingHint],
+  ['About', 'aboutIntro', 'Short introduction', '[data-panel="about"] .blurb', defaultPages.aboutIntro],
+  ['About', 'aboutBody', 'About text', '[data-panel="about"] .long', defaultPages.aboutBody],
+  ['About', 'aboutHeading', 'About heading', '[data-panel="about"] [data-heading]', defaultPages.aboutHeading],
+  ['About', 'aboutAction', 'About button', '[data-panel="about"] [data-open] span', defaultPages.aboutAction],
+  ['About', 'email', 'Contact email', '#mail', defaultPages.email],
+  ['About', 'github', 'GitHub address', '.links li:nth-child(2) code', defaultPages.github],
+  ['About', 'timeline1', 'Timeline · 2003', '.tl li:nth-child(1) span', defaultPages.timeline1],
+  ['About', 'timelineYear1', 'First timeline year', '.tl li:nth-child(1) b', defaultPages.timelineYear1],
+  ['About', 'timeline2', 'Timeline · 20XX', '.tl li:nth-child(2) span', defaultPages.timeline2],
+  ['About', 'timelineYear2', 'Second timeline year', '.tl li:nth-child(2) b', defaultPages.timelineYear2],
+  ['About', 'timeline3', 'Timeline · 2026', '.tl li:nth-child(3) span', defaultPages.timeline3],
+  ['About', 'timelineYear3', 'Third timeline year', '.tl li:nth-child(3) b', defaultPages.timelineYear3],
+  ['Blog', 'blogHeading', 'Blog heading', '[data-panel="blog"] [data-heading]', defaultPages.blogHeading],
+  ['Blog', 'blogIntro', 'Blog introduction', '[data-panel="blog"] .blurb', defaultPages.blogIntro],
+  ['Blog', 'blogAction', 'Blog button', '[data-panel="blog"] [data-open] span', defaultPages.blogAction],
+  ['Projects', 'projectsHeading', 'Projects heading', '[data-panel="projects"] [data-heading]', defaultPages.projectsHeading],
+  ['Projects', 'projectsIntro', 'Projects introduction', '[data-panel="projects"] .blurb', defaultPages.projectsIntro],
+  ['Projects', 'projectsAction', 'Projects button', '[data-panel="projects"] [data-open] span', defaultPages.projectsAction],
+  ['The Lobby', 'chatHeading', 'Lobby heading', '[data-panel="chat"] [data-heading]', defaultPages.chatHeading],
+  ['The Lobby', 'chatIntro', 'Lobby introduction', '[data-panel="chat"] .blurb', defaultPages.chatIntro],
+  ['The Lobby', 'chatAction', 'Lobby button', '[data-panel="chat"] [data-open] span', defaultPages.chatAction],
+];
+
+export function initialContent() {
+  return {
+    revision: 0,
+    pages: { ...defaultPages },
+    posts: [],
+    projects: [
+      { id: 'koreokorp-v2', title: 'KoreoKorp V2', description: 'This site. Four panels, one blog, one chat room.', url: '', image: '', imageAlt: '', status: 'published' },
+      { id: 'the-lobby', title: 'The Lobby', description: 'A shared chat room with screen names and two resident bots.', url: '', image: '', imageAlt: '', status: 'published' },
+    ],
+  };
+}

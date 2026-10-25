@@ -2,45 +2,9 @@
 
 import { Action, Bg, SectionNo, Tab } from './Panel';
 import type { PanelId } from '@/lib/store';
-
-const POSTS = [
-  {
-    date: '2026-09-29',
-    label: 'Sep 29, 2026',
-    title: 'Rebuilding KoreoKorp from scratch',
-    excerpt: 'Why V2 is Next.js, Supabase and Vercel, and why it still has a chat room.',
-  },
-  {
-    date: '2026-09-12',
-    label: 'Sep 12, 2026',
-    title: 'Meet the bots',
-    excerpt: "Two AI regulars live in the lobby. They argue so you don't have to.",
-  },
-  {
-    date: '2026-08-30',
-    label: 'Aug 30, 2026',
-    title: 'Screen names are back',
-    excerpt: "No login, no email. Pick a name and you're in.",
-  },
-];
-
-const PROJECTS = [
-  {
-    title: 'KoreoKorp V2',
-    description: 'This site. Four panels, one blog, one chat room.',
-    reverse: 'Next.js · canvas engines · realtime-ready',
-  },
-  {
-    title: 'The Lobby',
-    description: 'A shared chat room with screen names and two resident bots.',
-    reverse: 'Screen names · one shared room · two resident bots',
-  },
-  {
-    title: 'Placeholder project',
-    description: 'Swap in a real project, link, or screenshot.',
-    reverse: 'Your next project could live here',
-  },
-] as const;
+import { useContent } from '@/lib/useContent';
+import type { Project } from '../mockups/koreokorp-v2/content-model.js';
+import fallbackLogo from '@/assets/koreokorp-logo-cutout.webp';
 
 /**
  * The rotating About caption.
@@ -73,6 +37,7 @@ export function AboutBody({
   onCopy: () => void;
   copied: boolean;
 }) {
+  const { content: { pages } } = useContent();
   return (
     <>
       <Bg />
@@ -80,20 +45,17 @@ export function AboutBody({
       <div className="inner">
         <div className="eyebrow">KoreoKorp · V2</div>
         <h2>
-          About <SectionNo>01</SectionNo>
+          {pages.aboutHeading} <SectionNo>01</SectionNo>
         </h2>
         <div className="rest stack">
           <p className="blurb">
-            A small corner of the internet. Posts, projects, and a chat room you
-            can walk into with nothing but a screen name.
+            {pages.aboutIntro}
           </p>
           <NowCaption html={caption} />
         </div>
         <div className="detail about">
           <p className="long">
-            KoreoKorp is a small corner of the internet: posts, projects, and a
-            chat room from 2003 living inside a modern website. No accounts, no
-            feed. Pick a name and say hi.
+            {pages.aboutBody}
           </p>
           <div className="about-grid">
             <section>
@@ -102,16 +64,16 @@ export function AboutBody({
               </h3>
               <ol className="tl">
                 <li>
-                  <b>2003</b>
-                  <span>Away messages, buddy lists, 56k.</span>
+                  <b>{pages.timelineYear1}</b>
+                  <span>{pages.timeline1}</span>
                 </li>
                 <li>
-                  <b>20XX</b>
-                  <span>KoreoKorp V1 goes up.</span>
+                  <b>{pages.timelineYear2}</b>
+                  <span>{pages.timeline2}</span>
                 </li>
                 <li>
-                  <b>2026</b>
-                  <span>V2: four panels, a blog, and The Lobby.</span>
+                  <b>{pages.timelineYear3}</b>
+                  <span>{pages.timeline3}</span>
                 </li>
               </ol>
             </section>
@@ -122,7 +84,7 @@ export function AboutBody({
               <ul className="links">
                 <li>
                   <span>Email</span>
-                  <code id="mail">you@koreokorp.com</code>
+                  <code id="mail">{pages.email}</code>
                   <button
                     type="button"
                     className="copy"
@@ -134,7 +96,7 @@ export function AboutBody({
                 </li>
                 <li>
                   <span>GitHub</span>
-                  <code>github.com/your-handle</code>
+                  <code>{pages.github}</code>
                 </li>
                 <li>
                   <span>Chat</span>
@@ -152,13 +114,16 @@ export function AboutBody({
           </div>
           <NowCaption html={caption} />
         </div>
-        <Action label="About" />
+        <Action label={pages.aboutAction ?? 'About'} />
       </div>
     </>
   );
 }
 
 export function BlogBody() {
+  const { content: { pages, posts }, error } = useContent();
+  const published = [...posts].sort((a, b) => b.date.localeCompare(a.date));
+  const dateLabel = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   return (
     <>
       <Bg />
@@ -166,36 +131,36 @@ export function BlogBody() {
       <div className="inner">
         <div className="eyebrow">Journal</div>
         <h2>
-          Blog <SectionNo>02</SectionNo>
+          {pages.blogHeading} <SectionNo>02</SectionNo>
         </h2>
         <div className="rest stack">
           <p className="blurb">
-            Notes and updates, written from the admin page and published here.
+            {pages.blogIntro}
           </p>
           <div className="latest">
-            <small>Latest post</small>
-            <strong>{POSTS[0]?.title}</strong>
-            <span>Sep 29, 2026 · 4 min read</span>
+            <small>{published.length ? 'Latest post' : 'The journal'}</small>
+            <strong>{published[0]?.title ?? 'No entries yet. Check back soon.'}</strong>
+            {published[0] && <span>{dateLabel(published[0].date)}</span>}
           </div>
         </div>
         <div className="detail">
           <ul className="post-list">
-            {POSTS.map((post) => (
-              <li key={post.date}>
-                <time dateTime={post.date}>{post.label}</time>
-                <div>
-                  <strong>{post.title}</strong>
-                  <p>{post.excerpt}</p>
-                </div>
+            {published.map((post) => (
+              <li key={post.id}>
+                <time dateTime={post.date}>{dateLabel(post.date)}</time>
+                <details className="published-post">
+                  <summary><strong>{post.title}</strong><p>{post.excerpt || 'Read entry'}</p></summary>
+                  {post.image && <img className="content-image" src={post.image} alt={post.imageAlt} loading="lazy" />}
+                  <div className="post-body">{post.body.split(/\n\s*\n/).map((paragraph, index) => <p key={index}>{paragraph}</p>)}</div>
+                </details>
               </li>
             ))}
           </ul>
           <p className="admin-note">
-            Sample posts. Real ones come from the <code>posts</code> table,
-            written at <code>/admin</code>.
+            {error ? 'Entries could not be loaded. Refresh the page to try again.' : published.length ? 'Select an entry to read it.' : 'The journal is waiting for its first entry.'}
           </p>
         </div>
-        <Action label="Read the blog" />
+        <Action label={pages.blogAction ?? 'Read the blog'} />
       </div>
     </>
   );
@@ -204,29 +169,37 @@ export function BlogBody() {
 function ProjectCard({
   title,
   description,
-  reverse,
-}: (typeof PROJECTS)[number]) {
-  return (
-    <button
-      className="project-flip"
-      type="button"
-      aria-label={`${title} flip card`}
-    >
-      <span className="project-flip-inner">
-        <span className="project-face project-front">
-          <strong>{title}</strong>
-          <span>{description}</span>
-          <small>Flip card</small>
-        </span>
-        <span className="project-face project-back" aria-hidden="true">
-          <span>{reverse}</span>
-        </span>
+  url,
+  image,
+  imageAlt,
+}: Project) {
+  const faces = (
+    <span className="project-flip-inner">
+      <span className="project-face project-front">
+        <img className="project-logo" src={image || fallbackLogo.src} alt={imageAlt || `${title} logo`} loading="lazy" />
       </span>
-    </button>
+      <span className="project-face project-back" aria-hidden="true">
+        <span>{description}</span>
+      </span>
+    </span>
+  );
+  return (
+    <article className="project-record">
+      {url ? (
+        <a className="project-flip" href={url} target="_blank" rel="noopener noreferrer" aria-label={`${title}: ${description} (opens in a new tab)`}>
+          {faces}
+        </a>
+      ) : (
+        <button className="project-flip" type="button" aria-label={`${title}: ${description}`}>
+          {faces}
+        </button>
+      )}
+    </article>
   );
 }
 
 export function ProjectsBody() {
+  const { content: { pages, projects } } = useContent();
   return (
     <>
       <Bg />
@@ -234,10 +207,10 @@ export function ProjectsBody() {
       <div className="inner">
         <div className="eyebrow">Work</div>
         <h2>
-          Projects <SectionNo>03</SectionNo>
+          {pages.projectsHeading} <SectionNo>03</SectionNo>
         </h2>
         <div className="rest stack">
-          <p className="blurb">Things being built, tried, and occasionally finished.</p>
+          <p className="blurb">{pages.projectsIntro}</p>
           <div className="tags">
             <span>Next.js</span>
             <span>Supabase</span>
@@ -247,12 +220,13 @@ export function ProjectsBody() {
         </div>
         <div className="detail">
           <div className="proj">
-            {PROJECTS.map((project) => (
-              <ProjectCard key={project.title} {...project} />
+            {projects.map((project) => (
+              <ProjectCard key={project.id} {...project} />
             ))}
+            {!projects.length && <p>New projects are on the way.</p>}
           </div>
         </div>
-        <Action label="See projects" />
+        <Action label={pages.projectsAction ?? 'See projects'} />
       </div>
     </>
   );
@@ -265,15 +239,15 @@ export function ChatRestBody({
   onlineCount: number;
   preview: string[];
 }) {
+  const { content: { pages } } = useContent();
   return (
     <div className="rest col">
       <div className="eyebrow">The Lobby</div>
       <h2>
-        Chat room <SectionNo>04</SectionNo>
+        {pages.chatHeading} <SectionNo>04</SectionNo>
       </h2>
       <p className="blurb">
-        One shared room. Pick a screen name and jump in. Two bots are always
-        here, and they never stop talking.
+        {pages.chatIntro}
       </p>
       <div className="online">
         <i />
@@ -287,7 +261,7 @@ export function ChatRestBody({
       {/* The prototype's chat action button is hidden by `.panel .action`, so it
           is reproduced inert; signing on happens in the window itself. */}
       <button className="action" type="button" data-open>
-        <span>Enter the room</span>
+        <span>{pages.chatAction}</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <path d="M4 12h15m-6-6 6 6-6 6" />
         </svg>

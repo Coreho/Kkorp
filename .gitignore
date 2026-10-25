@@ -11,3 +11,8 @@ blob-report/
 # committed: AGENTS.md forbids committing generated output.
 .next/
 *.tsbuildinfo
+
+# Local editor content, password hash and uploads.
+data/
+.impeccable/review/
+.impeccable/deploy-source.tar

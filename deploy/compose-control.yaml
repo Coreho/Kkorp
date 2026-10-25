@@ -1,0 +1,20 @@
+services:
+  content-control:
+    image: koreokorp-control:20261024
+    container_name: koreokorp-control
+    restart: unless-stopped
+    environment:
+      ADMIN_ORIGIN: https://adctrl.koreokorp.com
+      PUBLIC_ORIGIN: https://koreokorp.com
+    volumes:
+      - /var/lib/koreokorp-content:/data
+    networks:
+      - edge
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+networks:
+  edge:
+    external: true

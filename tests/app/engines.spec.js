@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures.js';
 
 /**
  * The canvas engines, other than the jelly swarm.
@@ -96,7 +96,7 @@ test('the Lobby dot matrix ripples when a message is sent', async ({ page }) => 
   const before = await paintedPixels(page, '#dots');
   expect(before).toBeGreaterThan(200);
 
-  await page.getByLabel('Screen name').fill('RippleKid');
+  await page.getByLabel('Screen name', { exact: true }).fill('RippleKid');
   await page.getByRole('button', { name: 'Sign On' }).click();
   await page.getByLabel('Message').fill('make a ripple');
   await page.getByLabel('Message').press('Enter');
@@ -123,7 +123,7 @@ test('the screensaver starts on command, animates, and wakes on input', async ({
   await page.getByRole('button', { name: 'Enter KoreoKorp' }).click();
   await page.locator('[data-i="3"]').click();
   await page.waitForTimeout(1000);
-  await page.getByLabel('Screen name').fill('SaverKid');
+  await page.getByLabel('Screen name', { exact: true }).fill('SaverKid');
   await page.getByRole('button', { name: 'Sign On' }).click();
 
   await page.getByLabel('Message').fill('/screensaver');
@@ -191,7 +191,7 @@ test('chat commands and the Konami code reach the front-page caption', async ({ 
   const caption = () =>
     page.locator('.panel[data-panel="about"] .detail .now').first().textContent();
 
-  await page.getByLabel('Screen name').fill('Coupler');
+  await page.getByLabel('Screen name', { exact: true }).fill('Coupler');
   await page.getByRole('button', { name: 'Sign On' }).click();
   await page.waitForTimeout(600);
   expect(await caption()).toContain('Welcome to The Lobby');

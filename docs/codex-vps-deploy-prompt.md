@@ -1,5 +1,7 @@
 # Codex prompt: deploy KoreoKorp on a VPS
 
+> Historical static-only instructions. For the current content editor, use [the admin hosting guide](admin-panel.md) and the files in `deploy/`. A persistent Node service is now required; deploying only the HTML files will not support live content or editing.
+
 Replace the placeholders, then paste the prompt below into Codex while connected to the VPS.
 
 ```text

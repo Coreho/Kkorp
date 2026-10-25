@@ -114,7 +114,7 @@ for (const id of ['landing', 'enter', 'panels', 'cnav', 'signon', 'composer', 's
   if (!ids.includes(id)) failures.push(`Missing required element id: ${id}`);
 }
 
-if ((html.match(/<script>/g) || []).length !== (html.match(/<\/script>/g) || []).length) {
+if ((html.match(/<script\b/g) || []).length !== (html.match(/<\/script>/g) || []).length) {
   failures.push('Script tags are unbalanced.');
 }
 

@@ -10,3 +10,7 @@ docs
 .env
 .env.*
 tests
+
+!mockups/
+admin-auth.json
+source.tar

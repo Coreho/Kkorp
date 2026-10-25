@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures.js';
 
 /**
  * Mirrors tests/smoke.spec.js against the application.
@@ -60,7 +60,7 @@ test('chat validates screen names, signs on, sends text, and handles commands', 
   await page.locator('[data-i="3"]').click();
   await expect(page.locator('.panel.open')).toHaveAttribute('data-panel', 'chat');
 
-  const nameField = page.getByLabel('Screen name');
+  const nameField = page.getByLabel('Screen name', { exact: true });
   await nameField.fill('x');
   await page.getByRole('button', { name: 'Sign On' }).click();
   await expect(page.locator('#snErr')).toContainText('3 to 16');

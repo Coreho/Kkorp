@@ -31,6 +31,10 @@ test('landing, carousel navigation, keyboard controls, and return home', async (
     await expect(page.locator(`[data-panel="${section}"]`)).toHaveAttribute('aria-hidden', 'false');
   }
 
+  // The Lobby focuses its name field after opening. Move focus back to the
+  // navigation before checking carousel shortcuts, which ignore text inputs.
+  await expect(page.getByLabel('Screen name')).toBeFocused();
+  await page.locator('[data-i="3"]').focus();
   await page.keyboard.press('ArrowRight');
   await expect(page.locator('[data-panel="about"]')).toHaveClass(/open/);
   await page.keyboard.press('ArrowRight');

@@ -1,0 +1,27 @@
+[Unit]
+Description=KoreoKorp website and content administration
+After=network.target
+
+[Service]
+Type=simple
+User=koreokorp
+Group=koreokorp
+WorkingDirectory=/opt/koreokorp
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=4173
+Environment=ADMIN_ORIGIN=https://adctrl.koreokorp.com
+Environment=PUBLIC_ORIGIN=https://koreokorp.com
+Environment=CONTENT_DIR=/var/lib/koreokorp
+ExecStart=/usr/bin/node /opt/koreokorp/scripts/serve.mjs
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/koreokorp
+
+[Install]
+WantedBy=multi-user.target

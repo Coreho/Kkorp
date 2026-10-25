@@ -144,7 +144,7 @@ test.describe('visible animations', () => {
     await page.waitForTimeout(1400);
 
     const cards = page.locator('[data-panel="projects"] .project-flip');
-    await expect(cards).toHaveCount(3);
+    await expect(cards).toHaveCount(2);
 
     const content = await page.evaluate(() => {
       const card = document.querySelector(
@@ -165,8 +165,10 @@ test.describe('visible animations', () => {
     });
     expect(content.tag).toBe('BUTTON');
     expect(content.label).toContain('KoreoKorp V2');
-    expect(content.front).toContain('KoreoKorp V2');
-    expect(content.back).toContain('Next.js');
+    expect(content.front.trim()).toBe('');
+    await expect(cards.first().locator('.project-front img')).toHaveAttribute('src', /koreokorp-logo-cutout.*\.webp/);
+    expect(await cards.first().locator('.project-front img').evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
+    expect(content.back).toContain('This site.');
     expect(content.backDisplay).not.toBe('none');
     expect(content.frontBackface).toBe('hidden');
 
@@ -276,7 +278,7 @@ test.describe('visible animations', () => {
     expect(atRest).not.toBe(atPeak);
   });
 
-  test('reduced motion stops the added animations and leaves cards unflipped', async ({
+  test('reduced motion stops animations and reveals card descriptions instantly', async ({
     browser,
   }) => {
     const context = await browser.newContext({
@@ -341,12 +343,12 @@ test.describe('visible animations', () => {
         label: el.getAttribute('aria-label'),
       };
     });
-    expect(['none', 'matrix(1, 0, 0, 1, 0, 0)']).toContain(state.inner);
+    expect(rotateYDegrees(state.inner)).toBeGreaterThan(170);
     // The build's CSS optimiser rewrites `transform: none` to the equivalent
     // `translate(0, 0) scale(1)`, so the identity matrix is the correct
     // reduced-motion value; what matters is that nothing is displaced.
     expect(['none', 'matrix(1, 0, 0, 1, 0, 0)']).toContain(state.magnet);
-    expect(state.backDisplay).toBe('none');
+    expect(state.backDisplay).not.toBe('none');
     expect(state.label).toContain('KoreoKorp V2');
 
     expect(errors).toEqual([]);
