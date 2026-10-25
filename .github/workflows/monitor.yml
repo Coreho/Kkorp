@@ -22,3 +22,6 @@ jobs:
         with:
           node-version: '24'
       - run: node scripts/check-live-health.mjs
+        env:
+          # CI drill (TASK-023 AC#3): an unreachable origin so the run fails and emails the owner.
+          PUBLIC_ORIGIN: https://ci-drill.invalid
