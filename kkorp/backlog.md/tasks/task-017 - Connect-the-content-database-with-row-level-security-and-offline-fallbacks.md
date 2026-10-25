@@ -4,6 +4,7 @@ title: Connect the content database with row level security and offline fallback
 status: To Do
 assignee: []
 created_date: '2026-10-04 05:41'
+updated_date: '2026-10-25 05:57'
 labels:
   - cms
   - security
@@ -23,7 +24,7 @@ ordinal: 7000
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->
-Stage 2 of the delivery plan in docs/production-architecture.md. TASK-016 proves the runtime, but content is still hardcoded until a durable store exists. This stage creates the Supabase project, writes the migrations, and wires a read path that degrades instead of failing. The Free plan has no automatic backups and pauses a project after a week of inactivity, so the backup and keep-alive procedures are part of this stage rather than a later concern. Owner authorization at this stage means RLS policies and secret handling only; the admin shell itself is TASK-009. Migrations are written but not applied by the agent, and no project or bucket is provisioned without the owner's action.
+Stage 2 of the delivery plan in docs/production-architecture.md. TASK-016 proves the runtime, but content is still hardcoded until a durable store exists. This stage creates the Supabase project, writes the migrations, and wires a read path that degrades instead of failing. The Free plan has no automatic backups and pauses a project after a week of inactivity, so the backup and keep-alive procedures are part of this stage rather than a later concern. Owner authorization at this stage means RLS policies and secret handling only; the admin shell itself is TASK-009. Migrations are written but not applied by the agent, and no project or bucket is provisioned without the owner's action. Since 2026-10-24 the live editor stores content, the owner password and uploads as files in /var/lib/koreokorp-content (koreokorp-control, see docs/admin-deployment.md). The owner reaffirmed decision-001 on 2026-10-25, so this stage now also migrates that live data and sign-in into Supabase and retires the file store, without losing anything the editor does today.
 <!-- SECTION:DESCRIPTION:END -->
 
 ## Acceptance Criteria
@@ -36,6 +37,9 @@ Stage 2 of the delivery plan in docs/production-architecture.md. TASK-016 proves
 - [ ] #6 A nightly logical database dump and media sync write to /opt/stacks/koreokorp/backups with documented retention, and a restore is performed at least once from those backups.
 - [ ] #7 A keep-alive job runs at least every three days against the deep health endpoint, because the Free plan otherwise pauses after a week of inactivity and takes the public site down.
 - [ ] #8 The deep health endpoint reports whether the expected tables exist, so a missing migration is a visible warning rather than a production stack trace.
+- [ ] #9 Live content, published and draft, and every referenced upload are imported from the file store into Supabase by a rehearsed, repeatable script; entry counts and image references match before and after, and the file-store copy is kept read-only as a fallback until the owner signs off.
+- [ ] #10 Owner sign-in moves to Supabase Auth email and password, and everything the file-backed editor does today still works: the behaviour covered by tests/admin.spec.js and tests/app/content.spec.js passes against Supabase.
+- [ ] #11 After cutover the koreokorp-control file store and the TASK-022 backup job are retired or archived, with the steps recorded in docs/vps-deployment.md.
 <!-- AC:END -->
 
 ## Definition of Done
