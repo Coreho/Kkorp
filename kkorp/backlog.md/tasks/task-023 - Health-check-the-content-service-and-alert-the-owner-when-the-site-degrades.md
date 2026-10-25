@@ -4,7 +4,7 @@ title: Health-check the content service and alert the owner when the site degrad
 status: In Progress
 assignee: []
 created_date: '2026-10-25 04:37'
-updated_date: '2026-10-25 06:08'
+updated_date: '2026-10-25 15:52'
 labels:
   - hosting
 milestone: m-0
@@ -39,4 +39,6 @@ koreokorp-control has no container healthcheck. When it stops, the public site f
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-10-25: built by Codex, reviewed by Claude with one fix round (shared, cached HTTP probe so the public endpoint cannot force disk writes). Evidence: #1 tests/admin.spec.js control health tests (contract, fails closed on missing storage and invalid JSON, exits after consecutive timed failures, recovers, cached concurrent requests), 20/20 passing; on the VPS a scratch build of deploy/Dockerfile.control run with the real Compose healthcheck (renamed container, temporary data) became healthy in about 8 s and returned 503 when its data directory was made read-only; scratch image and container removed. #2 npm run health:check against production prints 'public content: live'. #4 docs/monitoring.md. Open: #3 alerting starts only after monitor.yml reaches main, and the control health check fails until the new control image is deployed, so deploy koreokorp-control from the merged commit at the same time as merging (until then every scheduled run fails and emails the owner).
+
+2026-10-25: deployed. koreokorp-control:d38560941f42 reports healthy through the Compose healthcheck. monitor.yml is on main; it was disabled during the release and re-enabled from the owner's account, and a manual run (actions run 40208581448) passed all five checks. AC#3 stays open until a failed run is confirmed to email the owner.
 <!-- SECTION:NOTES:END -->

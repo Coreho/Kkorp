@@ -4,6 +4,9 @@ COPY package.json ./
 COPY scripts/ ./scripts/
 COPY mockups/ ./mockups/
 COPY assets/ ./assets/
+# COPY keeps the build host's modes. A checkout made under umask 007 left
+# mockups/ unreadable to the node user, and the 2026-10-25 release crash-looped.
+RUN chmod -R a+rX /app
 USER node
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=4173 PRIVATE_PROXY_NETWORK=1 CONTENT_DIR=/data
 CMD ["node", "scripts/serve.mjs"]
