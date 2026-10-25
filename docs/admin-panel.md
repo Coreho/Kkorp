@@ -44,7 +44,7 @@ The default data directory is `data/` (ignored by Git). Production uses `/var/li
 - `content.json`: page text and all entries, including drafts; private.
 - `uploads/`: image assets served through generated `/uploads/...` URLs.
 
-Back up the complete data directory securely and regularly. Content writes use atomic replacement. Run only one instance against the directory; this is not a multi-server database. Keep data on persistent disk, never inside an ephemeral deployment image. A fresh directory starts with the existing page copy, two projects, and an empty blog. Existing mock blog posts were sample content, not published articles.
+Back up the complete data directory securely and regularly; production does this daily, see [content backups](admin-deployment.md#content-backups). Content writes use atomic replacement. Run only one instance against the directory; this is not a multi-server database. Keep data on persistent disk, never inside an ephemeral deployment image. A fresh directory starts with the existing page copy, two projects, and an empty blog. Existing mock blog posts were sample content, not published articles.
 
 Deleting an entry or removing an image reference does not delete image files. This preserves images referenced by other entries; review unused uploads manually if storage grows. Uploaded URLs are public when known, even for draft images. Do not upload confidential material. Server-side validation caps each collection at 500 entries and the content request at 2 MB.
 
