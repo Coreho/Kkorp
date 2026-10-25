@@ -32,11 +32,96 @@ jobs:
       - name: Run checks and browser tests
         run: npm test
 
-      - name: Upload Playwright report on failure
+      - name: Upload Playwright artifacts on failure
         if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
-          path: playwright-report/
+          name: playwright-prototype-editor
+          path: |
+            test-results/
+            playwright-report/
           if-no-files-found: ignore
           retention-days: 7
+
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        if: ${{ !cancelled() }}
+        run: npm run typecheck
+
+  app-test:
+    runs-on: ubuntu-latest
+    # Allow for the serial suite, two retries, dependency installation and build.
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Build application
+        run: npm run build
+
+      - name: Run application tests including the 620 KiB JavaScript budget
+        run: npm run test:app
+        env:
+          CI: '1'
+
+      - name: Upload Playwright artifacts on failure
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-app
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  docker-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: control
+            dockerfile: deploy/Dockerfile.control
+          - image: app
+            dockerfile: Dockerfile
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Build ${{ matrix.image }} image without pushing
+        run: docker build -f ${{ matrix.dockerfile }} -t koreokorp-${{ matrix.image }}:ci-local .
