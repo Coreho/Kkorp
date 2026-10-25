@@ -370,7 +370,7 @@ stage that depends on it.
 | 3 | Bot model provider | OpenRouter free models, server-only, 10 s timeout, canned fallback. Unchanged from `docs/codex-prompt.md` | DRAFT-008 only |
 | 4 | Custom SMTP for Supabase Auth | Not now. Password auth needs no email. Revisit if magic link is wanted | not blocking |
 | 5 | Admin password and its off-box copy | Owner's call; the credential is the site's only privileged secret | Stage 5 |
-| 6 | Whether `www.koreokorp.com` is configured | Promoted to TASK-026 on 2026-10-25 | not blocking |
+| 6 | Whether `www.koreokorp.com` is configured | Done 2026-10-25 (TASK-026): one 301 to `https://koreokorp.com`, path and query preserved | not blocking |
 | 7 | Telegram/Discord/webhook notifications for deploy failures | Not now; read logs instead. Revisit if deploys become unattended | not blocking |
 
 ### Self-hosted alternative, for the record
