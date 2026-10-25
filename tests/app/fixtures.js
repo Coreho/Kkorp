@@ -10,9 +10,9 @@ import { initialContent } from '../../mockups/koreokorp-v2/content-model.js';
  * context routes.
  */
 export const test = base.extend({
-  page: async ({ page }, use) => {
+  page: async ({ page }, providePage) => {
     await page.route('**/api/content', (route) => route.fulfill({ json: initialContent() }));
-    await use(page);
+    await providePage(page);
   },
 });
 
