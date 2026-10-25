@@ -31,6 +31,9 @@ images at `/uploads/`. Run `npm run admin:password` once to set the owner
 password, restart the server, then sign in at `/admin`. Content, the password
 hash and uploads are stored in `data/` (ignored by Git). See
 [the admin guide](docs/admin-panel.md) for editing, sessions and limits.
+The server also answers `GET /api/health`, and `npm run health:check` checks
+the live site, the content API and the editor; a scheduled workflow runs it
+every ten minutes (see [monitoring](docs/monitoring.md)).
 
 **Control service image.** Production runs the same server as the
 `koreokorp-control` container:
@@ -44,6 +47,23 @@ used on the VPS. It mounts persistent content at `/data` and joins the private
 proxy network without publishing a host port.
 
 ## Quality checks
+
+CI runs on every pull request and push to `main`. All of these checks must
+pass before merging:
+
+- Repository checks and the prototype/editor browser suite (`npm test`, which
+  runs `npm run check` followed by `playwright test`).
+- ESLint (`npm run lint`) and TypeScript (`npm run typecheck`).
+- The production application build (`npm run build`) and the full application
+  browser suite (`CI=1 npm run test:app`), including the 620 KiB client
+  JavaScript ceiling.
+- Both Docker image builds, without pushing: `docker build -t
+  koreokorp-app:ci-local .` and `docker build -f deploy/Dockerfile.control -t
+  koreokorp-control:ci-local .`, each using the repository root as its context.
+
+The prototype/editor, lint/typecheck, application and Docker build jobs run independently.
+Failed browser suites upload `test-results/` and `playwright-report/` under
+distinct artifact names, retained for seven days.
 
 ```powershell
 npm run check          # Validate required files and markup invariants

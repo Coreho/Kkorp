@@ -4,7 +4,7 @@ title: Add rich project previews to the Projects panel
 status: To Do
 assignee: []
 created_date: '2026-10-04 03:14'
-updated_date: '2026-10-04 05:43'
+updated_date: '2026-10-25 05:56'
 labels:
   - projects
   - design
@@ -41,3 +41,9 @@ Text-only project placeholders do not show what the work looks like or make indi
 - [ ] #2 Relevant checks pass; new interactions have regression coverage, and npm test plus git diff --check pass before committing.
 - [ ] #3 Documentation is updated where behavior or workflow changes, and remaining limitations are recorded.
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-10-25 (TASK-021): partly started. Project cards show the uploaded logo on the front and the description on the back, link to the project URL in a new tab, reveal the description on keyboard focus, and fit 390px (docs/design/project-cards.md; tests/app/content.spec.js 'phone project tiles stay compact and open their destination on the first tap'). Still open: video previews, technologies and status on cards, a detail view, and measured lazy loading and layout-shift checks.
+<!-- SECTION:NOTES:END -->

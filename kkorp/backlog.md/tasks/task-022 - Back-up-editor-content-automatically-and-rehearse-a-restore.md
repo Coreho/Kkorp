@@ -4,6 +4,7 @@ title: Back up editor content automatically and rehearse a restore
 status: To Do
 assignee: []
 created_date: '2026-10-25 04:37'
+updated_date: '2026-10-25 05:56'
 labels:
   - hosting
   - cms
@@ -35,3 +36,9 @@ All editor data is in /var/lib/koreokorp-content on the VPS: content.json (page 
 - [ ] #2 Relevant checks pass; new interactions have regression coverage, and npm test plus git diff --check pass before committing.
 - [ ] #3 Documentation is updated where behavior or workflow changes, and remaining limitations are recorded.
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-10-25 (TASK-021): interim. The owner reaffirmed decision-001 (Supabase), so this job protects the file store only until TASK-017's cutover; TASK-017 then retires it in favour of its own database dump and media sync.
+<!-- SECTION:NOTES:END -->
