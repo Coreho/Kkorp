@@ -32,8 +32,9 @@ password, restart the server, then sign in at `/admin`. Content, the password
 hash and uploads are stored in `data/` (ignored by Git). See
 [the admin guide](docs/admin-panel.md) for editing, sessions and limits.
 The server also answers `GET /api/health`, and `npm run health:check` checks
-the live site, the content API and the editor; a scheduled workflow runs it
-every ten minutes (see [monitoring](docs/monitoring.md)).
+the live site, the content API and the editor. A scheduled workflow runs it and
+emails the owner when a check fails. It is scheduled every ten minutes, but
+GitHub runs it only about every two hours (see [monitoring](docs/monitoring.md)).
 
 **Blog entries.** Each published entry has its own page at `/blog/<slug>`,
 linked from the Blog slide; "All entries" returns to `/#blog`. The address
@@ -81,7 +82,9 @@ pass before merging:
 
 The prototype/editor, lint/typecheck, application and Docker build jobs run independently.
 Failed browser suites upload `test-results/` and `playwright-report/` under
-distinct artifact names, retained for seven days.
+distinct artifact names (`playwright-prototype-editor` and `playwright-app`),
+retained for seven days. Each failed test has a screenshot, a video and, from
+its first retry, a trace.
 
 ```powershell
 npm run check          # Validate required files and markup invariants
