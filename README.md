@@ -31,6 +31,9 @@ images at `/uploads/`. Run `npm run admin:password` once to set the owner
 password, restart the server, then sign in at `/admin`. Content, the password
 hash and uploads are stored in `data/` (ignored by Git). See
 [the admin guide](docs/admin-panel.md) for editing, sessions and limits.
+The server also answers `GET /api/health`, and `npm run health:check` checks
+the live site, the content API and the editor; a scheduled workflow runs it
+every ten minutes (see [monitoring](docs/monitoring.md)).
 
 **Control service image.** Production runs the same server as the
 `koreokorp-control` container:

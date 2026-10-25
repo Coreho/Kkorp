@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { spawn } from 'node:child_process';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { hashPassword } from '../scripts/admin-auth.mjs';
@@ -11,9 +11,9 @@ test.describe('content administration', () => {
   let server;
   let directory;
   const password = 'test-password-only-12345';
-  async function startServer(port, nodeEnv = 'test') {
+  async function startServer(port, nodeEnv = 'test', environment = {}) {
     const instance = spawn(process.execPath, ['scripts/serve.mjs', '--port', String(port)], {
-      env: { ...process.env, NODE_ENV: nodeEnv, HOST: '127.0.0.1', ADMIN_ORIGIN: 'https://adctrl.koreokorp.com', PUBLIC_ORIGIN: 'https://koreokorp.com', CONTENT_DIR: directory, ADMIN_PASSWORD_HASH: undefined },
+      env: { ...process.env, NODE_ENV: nodeEnv, HOST: '127.0.0.1', ADMIN_ORIGIN: 'https://adctrl.koreokorp.com', PUBLIC_ORIGIN: 'https://koreokorp.com', CONTENT_DIR: directory, ADMIN_PASSWORD_HASH: undefined, ...environment },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     await new Promise((resolve, reject) => {
@@ -39,6 +39,107 @@ test.describe('content administration', () => {
   test.afterAll(async () => {
     await stopServer(server);
     if (directory) await rm(directory, { recursive: true, force: true });
+  });
+
+  test('control health is private, sends no-store, and is independent of host and session', async ({ request }) => {
+    const instance = await startServer(4183, 'production');
+    try {
+      for (const Host of ['127.0.0.1:4183', 'adctrl.koreokorp.com', 'unknown.example']) {
+        const response = await request.get('http://127.0.0.1:4183/api/health', { headers: { Host } });
+        expect(response.status()).toBe(200);
+        expect(response.headers()['cache-control']).toBe('no-store');
+        expect(await response.json()).toEqual({ ok: true, service: 'koreokorp-control' });
+      }
+      expect((await readdir(directory)).filter((name) => name.startsWith('.health-'))).toEqual([]);
+      expect((await request.get('http://127.0.0.1:4183/api/content', { headers: { Host: 'unknown.example' } })).status()).toBe(421);
+    } finally { await stopServer(instance); }
+  });
+
+  test('control health fails closed for missing storage and invalid content JSON', async ({ request }) => {
+    const temporary = await mkdtemp(join(tmpdir(), 'kkorp-health-test-'));
+    const instance = await startServer(4183, 'test', { CONTENT_DIR: temporary });
+    try {
+      await writeFile(join(temporary, 'content.json'), '{private invalid content');
+      for (const state of ['invalid', 'missing']) {
+        if (state === 'missing') await rm(temporary, { recursive: true });
+        const response = await request.get('http://127.0.0.1:4183/api/health');
+        expect(response.status()).toBe(503);
+        expect(response.headers()['cache-control']).toBe('no-store');
+        expect(await response.json()).toEqual({ ok: false, service: 'koreokorp-control' });
+      }
+    } finally {
+      await stopServer(instance);
+      await rm(temporary, { recursive: true, force: true });
+    }
+  });
+
+  test('control exits nonzero after consecutive timed storage failures', async () => {
+    const instance = await startServer(4183, 'test', {
+      CONTENT_DIR: join(directory, 'missing'), HEALTH_CHECK_INTERVAL_MS: '100', HEALTH_CHECK_FAILURE_THRESHOLD: '3',
+    });
+    try {
+      await expect.poll(() => instance.exitCode, { timeout: 5000 }).toBe(1);
+    } finally { await stopServer(instance); }
+  });
+
+  test('control health shares concurrent requests and refreshes after the cache window', async ({ request }) => {
+    const temporary = await mkdtemp(join(tmpdir(), 'kkorp-health-cache-'));
+    const instance = await startServer(4183, 'test', { CONTENT_DIR: temporary, HEALTH_CACHE_MS: '1500' });
+    const endpoint = 'http://127.0.0.1:4183/api/health';
+    async function expectHealthyBurst() {
+      const responses = await Promise.all(Array.from({ length: 20 }, () => request.get(endpoint)));
+      for (const response of responses) {
+        expect(response.status()).toBe(200);
+        expect(response.headers()['cache-control']).toBe('no-store');
+        expect(await response.json()).toEqual({ ok: true, service: 'koreokorp-control' });
+      }
+    }
+    try {
+      await expectHealthyBurst();
+      await writeFile(join(temporary, 'content.json'), '{');
+      await expectHealthyBurst();
+      await expect.poll(async () => (await request.get(endpoint)).status(), { timeout: 5000 }).toBe(503);
+      expect(await (await request.get(endpoint)).json()).toEqual({ ok: false, service: 'koreokorp-control' });
+      expect((await readdir(temporary)).filter((name) => name.startsWith('.health-'))).toEqual([]);
+    } finally {
+      await stopServer(instance);
+      await rm(temporary, { recursive: true, force: true });
+    }
+  });
+
+  test('timed storage checks bypass a cached healthy HTTP result', async ({ request }) => {
+    const temporary = await mkdtemp(join(tmpdir(), 'kkorp-health-fresh-'));
+    const instance = await startServer(4183, 'test', {
+      CONTENT_DIR: temporary, HEALTH_CACHE_MS: '60000',
+      HEALTH_CHECK_INTERVAL_MS: '100', HEALTH_CHECK_FAILURE_THRESHOLD: '3',
+    });
+    try {
+      expect((await request.get('http://127.0.0.1:4183/api/health')).status()).toBe(200);
+      await writeFile(join(temporary, 'content.json'), '{');
+      await expect.poll(() => instance.exitCode, { timeout: 5000 }).toBe(1);
+    } finally {
+      await stopServer(instance);
+      await rm(temporary, { recursive: true, force: true });
+    }
+  });
+
+  test('control stays running after a transient storage failure recovers', async () => {
+    const temporary = await mkdtemp(join(tmpdir(), 'kkorp-health-recovery-'));
+    await writeFile(join(temporary, 'content.json'), '{');
+    const instance = await startServer(4183, 'test', {
+      CONTENT_DIR: temporary, HEALTH_CHECK_INTERVAL_MS: '200', HEALTH_CHECK_FAILURE_THRESHOLD: '5',
+    });
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 450));
+      await writeFile(join(temporary, 'content.json'), '{}');
+      await new Promise((resolve) => setTimeout(resolve, 1100));
+      expect(instance.exitCode).toBeNull();
+      await writeFile(join(temporary, 'content.json'), '{');
+      await expect.poll(() => instance.exitCode, { timeout: 5000 }).toBe(1);
+    } finally {
+      await stopServer(instance);
+      await rm(temporary, { recursive: true, force: true });
+    }
   });
 
   test('requires a login before accessing content administration', async ({ page, request }) => {
