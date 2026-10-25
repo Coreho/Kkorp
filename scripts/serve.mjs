@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { mkdir, readFile, realpath, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, realpath, stat, unlink, writeFile } from 'node:fs/promises';
 import { extname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, randomUUID } from 'node:crypto';
@@ -32,6 +32,75 @@ const cleanup = setInterval(() => {
   for (const [key, value] of attempts) if (value.until < Date.now()) attempts.delete(key);
 }, 60000);
 cleanup.unref();
+
+function positiveInteger(value, fallback) {
+  const number = Number(value);
+  return Number.isSafeInteger(number) && number > 0 && number <= 2147483647 ? number : fallback;
+}
+const healthInterval = positiveInteger(process.env.HEALTH_CHECK_INTERVAL_MS, 60000);
+const healthThreshold = positiveInteger(process.env.HEALTH_CHECK_FAILURE_THRESHOLD, 3);
+const healthCacheMs = positiveInteger(process.env.HEALTH_CACHE_MS, 5000);
+let httpHealthProbe;
+let httpHealthResult = false;
+let httpHealthExpires = 0;
+let healthTimer;
+let healthFailures = 0;
+let shuttingDown = false;
+
+async function probeContentDirectory() {
+  const probe = resolve(contentDirectory, `.health-${randomUUID()}`);
+  const value = randomUUID();
+  let created = false;
+  let ok = false;
+  try {
+    await writeFile(probe, value, { flag: 'wx', mode: 0o600 });
+    created = true;
+    if (await readFile(probe, 'utf8') !== value) throw new Error('Probe mismatch');
+    try { JSON.parse(await readFile(resolve(contentDirectory, 'content.json'), 'utf8')); }
+    catch (error) { if (error.code !== 'ENOENT') throw error; }
+    ok = true;
+  } catch { /* Only the boolean health result is public. */ }
+  finally {
+    if (created) {
+      try { await unlink(probe); }
+      catch { ok = false; }
+    }
+  }
+  return ok;
+}
+
+async function httpContentHealth() {
+  if (httpHealthProbe) return httpHealthProbe;
+  if (performance.now() < httpHealthExpires) return httpHealthResult;
+  httpHealthProbe = probeContentDirectory().then((ok) => {
+    httpHealthResult = ok;
+    httpHealthExpires = performance.now() + healthCacheMs;
+    return ok;
+  }).finally(() => { httpHealthProbe = undefined; });
+  return httpHealthProbe;
+}
+
+function shutdown(code) {
+  shuttingDown = true;
+  clearTimeout(healthTimer);
+  clearInterval(cleanup);
+  server.close(() => process.exit(code));
+  server.closeAllConnections();
+}
+
+function scheduleHealthCheck() {
+  // A single recursive timer prevents overlapping probes on slow storage.
+  healthTimer = setTimeout(async () => {
+    const ok = await probeContentDirectory();
+    if (shuttingDown) return;
+    healthFailures = ok ? 0 : healthFailures + 1;
+    if (healthFailures >= healthThreshold) {
+      console.error('Content storage health failed repeatedly; exiting for restart.');
+      shutdown(1);
+    } else scheduleHealthCheck();
+  }, healthInterval);
+  healthTimer.unref();
+}
 
 function json(response, status, body) {
   response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -80,6 +149,11 @@ const server = createServer(async (request, response) => {
   response.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   if (production) response.setHeader('Strict-Transport-Security', 'max-age=31536000');
   try {
+    // This exact GET is host- and session-independent for container probes.
+    if (request.method === 'GET' && request.url?.split('?')[0] === '/api/health') {
+      const ok = await httpContentHealth();
+      return json(response, ok ? 200 : 503, { ok, service: 'koreokorp-control' });
+    }
     const authority = request.headers.host || '';
     const local = /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/.test(authority);
     const isAdminHost = authority === adminOrigin.host;
@@ -164,7 +238,8 @@ const server = createServer(async (request, response) => {
 server.requestTimeout = 30000;
 server.headersTimeout = 15000;
 server.listen(port, host, () => {
+  scheduleHealthCheck();
   console.log(`KoreoKorp preview: http://${host}:${port}`);
   if (!passwordHash) console.log('Admin login is locked. Run npm run admin:password, then restart.');
 });
-for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => server.close(() => process.exit(0)));
+for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => shutdown(0));
