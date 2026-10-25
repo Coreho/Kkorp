@@ -72,6 +72,11 @@ with content on persistent disk at `/var/lib/koreokorp-content`.
 routes, password reset, backups and rollback. The Caddy and systemd files in
 `deploy/` are alternatives for a fresh VPS, not the live configuration.
 
+Editor content is backed up daily on the VPS and copied to the owner's
+computer by a scheduled task; see
+[content backups](docs/admin-deployment.md#content-backups) for checking and
+restoring. `www.koreokorp.com` redirects to `https://koreokorp.com`.
+
 ## Task management
 
 Backlog.md is pinned as a development dependency and installed by `npm ci`.
