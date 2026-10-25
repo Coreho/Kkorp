@@ -4,7 +4,7 @@ title: Manage About timeline and contact links
 status: To Do
 assignee: []
 created_date: '2026-10-04 03:14'
-updated_date: '2026-10-04 05:43'
+updated_date: '2026-10-25 05:56'
 labels:
   - admin
   - cms
@@ -41,3 +41,9 @@ The About timeline and contact links are placeholders embedded in the page. The 
 - [ ] #2 Relevant checks pass; new interactions have regression coverage, and npm test plus git diff --check pass before committing.
 - [ ] #3 Documentation is updated where behavior or workflow changes, and remaining limitations are recorded.
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-10-25 (TASK-021): the file-backed editor (PR #3) edits the three fixed timeline entries (year and text), the contact email and the GitHub address as page text. None of this task's criteria are met yet: entries cannot be added, reordered, hidden or removed, and link types are not validated. Build on timeline_entries and contact_links from TASK-017.
+<!-- SECTION:NOTES:END -->

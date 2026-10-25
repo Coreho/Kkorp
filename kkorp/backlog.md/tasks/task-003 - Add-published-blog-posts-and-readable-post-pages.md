@@ -4,7 +4,7 @@ title: Publish the blog index and post pages
 status: To Do
 assignee: []
 created_date: '2026-10-04 03:01'
-updated_date: '2026-10-04 05:43'
+updated_date: '2026-10-25 05:56'
 labels:
   - blog
   - frontend
@@ -39,3 +39,9 @@ The Blog panel currently presents sample posts without the planned durable publi
 - [ ] #2 Relevant checks pass; new interactions have regression coverage, and npm test plus git diff --check pass before committing.
 - [ ] #3 Documentation is updated where behavior or workflow changes, and remaining limitations are recorded.
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-10-25 (TASK-021): partly started by the file-backed editor (PR #3). The Blog panel lists published entries newest first and expands each entry's full text in place; drafts are never public and bodies render as plain text. Still open: per-slug post pages, Markdown rendering, and article layouts at desktop and 390px. Build on the Supabase schema from TASK-017.
+<!-- SECTION:NOTES:END -->

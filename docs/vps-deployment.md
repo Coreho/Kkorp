@@ -18,26 +18,38 @@ archive `/opt/stacks/koreokorp/backups/retired-static-site-20261006T124120Z.tar.
 (SHA-256 `678f88be95a476ed47dc8279333759c1652474099d4a44660464379284c11e17`).
 It is not an active environment or deployment source.
 
+## Content service
+
+Since 2026-10-24 a third container, `koreokorp-control`, runs the owner editor
+and the content API from `scripts/serve.mjs` (image `koreokorp-control:20261024`,
+Compose file `/opt/stacks/koreokorp/compose-control.yaml`). It serves
+`https://adctrl.koreokorp.com` (Proxy Manager host 12), publishes no host port,
+and keeps content, the password hash and uploads in
+`/var/lib/koreokorp-content`. The public hosts route only `/api/content` and
+`/uploads/` to it and return 404 for `/admin` and `/api/admin/`. If it is down,
+the public site keeps working with its bundled default copy.
+
+This file store is interim. The owner reaffirmed decision-001 on 2026-10-25:
+content, auth and media move to Supabase in TASK-017. Until then,
+[the admin deployment record](admin-deployment.md) is the reference for this
+service's routes, password reset, backups and rollback.
+
 ## Current release
 
-The current production release is image `koreokorp-app:a0f696cb46b5`, revision
-`a0f696cb46b5df6247135f3f87c09b20cf5cf262`, promoted on 2026-10-06. It keeps
-the jelly swarm animating regardless of `prefers-reduced-motion` per the
-owner's decision; the CSS decoration (orbit ring, breathing tagline, panel
-pulse, flip cards) and pointer tactility still collapse under the preference.
-It also carries the visible animation pass. Before promotion it passed the
-repository suite, `npm run lint`, `npm run typecheck`, `npm test`,
-`npm run build`, the full application suite (30 passed, 2 staging-only tests
-skipped), and the staging TLS suite. After promotion the production TLS suite
-passed, and a frame probe confirmed the canvas animates under both settings
-(12/12, 12/12 and 14/14 distinct frames on landing, entering and navigation)
-while the CSS reduced-motion rules stayed applied and zero console errors were
-logged.
+The current production and staging image is `koreokorp-app:7ff44e8a1f43`,
+recorded in `current-release-prod`; the previous production image is
+`koreokorp-app:12b7742248c2`. These images and the 2026-10-24 editor
+deployment were built from a source folder on the server
+(`/home/korebear/kkorp-admin-release-20261024`), so their tags are not commits
+in this repository. TASK-020 commits that source; the next release must be
+built from a commit again so the `<commit-sha12>` lineage holds.
 
-The previous production image, `koreokorp-app:1989492169c5`, is recorded in
-`previous-release-prod`. Proxy host 9 targets `koreokorp-prod:3000`. The
-retired static container is still running but unrouted as a hot fallback; the
-archive above remains the documented disaster source.
+The last release built from a commit was `koreokorp-app:a0f696cb46b5`
+(revision `a0f696cb46b5df6247135f3f87c09b20cf5cf262`, promoted 2026-10-06). It
+keeps the jelly swarm animating regardless of `prefers-reduced-motion` per the
+owner's decision, and passed the repository suite, lint, typecheck, build, the
+application suite and the staging and production TLS suites before and after
+promotion.
 
 ## Host files
 
@@ -45,6 +57,7 @@ archive above remains the documented disaster source.
 |---|---|
 | `/opt/stacks/koreokorp/compose-app.yaml` | Staging service definition |
 | `/opt/stacks/koreokorp/compose-prod.yaml` | Production service definition |
+| `/opt/stacks/koreokorp/compose-control.yaml` | Content service (editor and content API) definition |
 | `/opt/stacks/koreokorp/deploy-app.sh` | Builds and deploys a committed candidate to staging |
 | `/opt/stacks/koreokorp/promote-prod.sh` | Promotes the exact healthy staging image to production |
 | `/opt/stacks/koreokorp/previous-release-app` | Previous staging image tag |
