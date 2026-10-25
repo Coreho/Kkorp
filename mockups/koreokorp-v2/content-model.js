@@ -66,3 +66,32 @@ export function initialContent() {
     ],
   };
 }
+
+// A post's web address: /blog/<slug>. Lowercase ASCII words joined by hyphens.
+export const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+export function slugify(title) {
+  const words = String(title).normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return words.slice(0, 72).replace(/-+$/, '') || 'post';
+}
+
+// Kept slugs are reserved first, so a published address never moves when a
+// newer entry has the same title. Missing or duplicate slugs come from the title.
+export function assignSlugs(posts) {
+  const taken = new Set();
+  const kept = posts.map((post) => {
+    const slug = typeof post.slug === 'string' && slugPattern.test(post.slug) && post.slug.length <= 80 && !taken.has(post.slug) ? post.slug : '';
+    if (slug) taken.add(slug);
+    return slug;
+  });
+  return posts.map((post, index) => {
+    let slug = kept[index];
+    if (!slug) {
+      const base = slugify(post.title);
+      slug = base;
+      for (let suffix = 2; taken.has(slug); suffix += 1) slug = `${base}-${suffix}`;
+      taken.add(slug);
+    }
+    return { ...post, slug };
+  });
+}
