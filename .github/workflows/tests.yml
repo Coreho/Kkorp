@@ -123,5 +123,27 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
+      # The server's checkout is made under umask 007; reproduce that so the
+      # image must not depend on the build host's file modes.
+      - name: Remove group and other access, as on the server
+        if: matrix.image == 'control'
+        run: chmod -R go-rwx package.json scripts mockups assets
+
       - name: Build ${{ matrix.image }} image without pushing
         run: docker build -f ${{ matrix.dockerfile }} -t koreokorp-${{ matrix.image }}:ci-local .
+
+      - name: Start the control image and wait for its health check
+        if: matrix.image == 'control'
+        run: |
+          mkdir -p "$RUNNER_TEMP/content" && chmod 777 "$RUNNER_TEMP/content"
+          docker run -d --name control-smoke --read-only --cap-drop ALL \
+            -e ADMIN_ORIGIN=https://adctrl.koreokorp.com -e PUBLIC_ORIGIN=https://koreokorp.com \
+            -e ADMIN_PASSWORD_HASH=ci:00 -v "$RUNNER_TEMP/content:/data" koreokorp-control:ci-local
+          for attempt in $(seq 1 20); do
+            if docker exec control-smoke node -e "fetch('http://127.0.0.1:4173/api/health').then(async (r) => process.exit(r.ok && (await r.json()).ok ? 0 : 1)).catch(() => process.exit(1))"; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs control-smoke
+          exit 1

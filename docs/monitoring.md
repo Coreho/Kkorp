@@ -106,3 +106,9 @@ storage or necessarily restart an unchanged unhealthy container. Resolve the
 underlying error first, then restart control if needed. If only app checks fail,
 inspect `koreokorp-prod` and proxy logs as well. Rerun `npm run health:check` from
 outside the server and confirm all five lines pass.
+
+**Status, 2026-10-25.** The control image with `/api/health` and the Compose
+healthcheck is live (`koreokorp-control:d38560941f42`, healthy). The monitor was
+disabled during the release and re-enabled afterwards, by the repository owner's
+account. A manual run passed all five checks. Email delivery for a failed run
+has not yet been confirmed.

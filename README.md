@@ -71,11 +71,13 @@ pass before merging:
   runs `npm run check` followed by `playwright test`).
 - ESLint (`npm run lint`) and TypeScript (`npm run typecheck`).
 - The production application build (`npm run build`) and the full application
-  browser suite (`CI=1 npm run test:app`), including the 620 KiB client
-  JavaScript ceiling.
+  browser suite (`CI=1 npm run test:app`), including the client JavaScript
+  ceilings (620 KiB for the home page, 15 KiB for a blog entry page).
 - Both Docker image builds, without pushing: `docker build -t
   koreokorp-app:ci-local .` and `docker build -f deploy/Dockerfile.control -t
   koreokorp-control:ci-local .`, each using the repository root as its context.
+  The control image is built from a checkout without group or other file
+  access, as on the server, and must then start and pass `/api/health`.
 
 The prototype/editor, lint/typecheck, application and Docker build jobs run independently.
 Failed browser suites upload `test-results/` and `playwright-report/` under
