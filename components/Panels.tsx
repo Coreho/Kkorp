@@ -148,16 +148,14 @@ export function BlogBody() {
             {published.map((post) => (
               <li key={post.id}>
                 <time dateTime={post.date}>{dateLabel(post.date)}</time>
-                <details className="published-post">
-                  <summary><strong>{post.title}</strong><p>{post.excerpt || 'Read entry'}</p></summary>
-                  {post.image && <img className="content-image" src={post.image} alt={post.imageAlt} loading="lazy" />}
-                  <div className="post-body">{post.body.split(/\n\s*\n/).map((paragraph, index) => <p key={index}>{paragraph}</p>)}</div>
-                </details>
+                <a className="published-post" href={`/blog/${post.slug}`}>
+                  <strong>{post.title}</strong><p>{post.excerpt || 'Read entry'}</p>
+                </a>
               </li>
             ))}
           </ul>
           <p className="admin-note">
-            {error ? 'Entries could not be loaded. Refresh the page to try again.' : published.length ? 'Select an entry to read it.' : 'The journal is waiting for its first entry.'}
+            {error ? 'Entries could not be loaded. Refresh the page to try again.' : published.length ? 'Choose an entry to read it.' : 'The journal is waiting for its first entry.'}
           </p>
         </div>
         <Action label={pages.blogAction ?? 'Read the blog'} />

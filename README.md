@@ -35,6 +35,22 @@ The server also answers `GET /api/health`, and `npm run health:check` checks
 the live site, the content API and the editor; a scheduled workflow runs it
 every ten minutes (see [monitoring](docs/monitoring.md)).
 
+**Blog entries.** Each published entry has its own page at `/blog/<slug>`,
+linked from the Blog slide; "All entries" returns to `/#blog`. The address
+comes from the title the first time an entry is saved and stays fixed once it
+is published, so renaming a published entry keeps its link. Drafts and unknown
+addresses show "Entry not found". Bodies are Markdown: paragraphs (single line
+breaks are kept), `##` headings, bold, italic, `code`, links, bulleted and
+numbered lists, quotes, fenced code and rules. Raw HTML is shown as text, and
+links keep only http(s), mailto and same-site addresses. The reader is
+`lib/markdown.ts` rather than a library, because the client JavaScript budget
+has no room for one; nested lists, tables and inline images are not supported.
+The budget test in `tests/app/tactile.spec.js` caps the home page at 620 KiB
+(every emitted chunk except those only entry pages load) and an entry page's
+own chunks at 15 KiB. Entry pages read the same `/api/content` as the carousel in the
+browser, so a missing entry shows its not-found page with status 200 and
+`noindex`; only malformed addresses return a real 404.
+
 **Control service image.** Production runs the same server as the
 `koreokorp-control` container:
 

@@ -11,7 +11,7 @@ The editor is now deployed on the existing server behind Nginx Proxy Manager, wi
 3. Run `npm run dev` and open `http://127.0.0.1:4173/admin`.
 4. Sign in. Edit page text and choose **Save page text**, or create projects and blog entries. **Save draft** keeps an entry private; **Publish entry** makes it visible immediately. Dates label posts; they do not schedule publication. Published entries can be edited, unpublished, or deleted.
 
-Projects support descriptions, external links, and image uploads. Blog entries support dates, introductions, plain-text bodies, and cover images. Select a published post on the public blog panel to expand its complete text. Images need a description for screen readers. PNG, JPEG, WebP, and GIF images up to 5 MB are supported; SVG and executable files are rejected. Uploads are image assets, not executable project bundles.
+Projects support descriptions, external links, and image uploads. Blog entries support dates, introductions, Markdown bodies, and cover images. Each published entry has its own page at `/blog/<slug>`; the address comes from the title when the entry is first saved and stays fixed once it is published, and the editor shows it under the post text. The Markdown subset and its limits are listed in the README. Images need a description for screen readers. PNG, JPEG, WebP, and GIF images up to 5 MB are supported; SVG and executable files are rejected. Uploads are image assets, not executable project bundles.
 
 Changes require an explicit save. Navigation warns before discarding unsaved work. A version check prevents two editors from silently overwriting each other; copy unsaved text before reloading after a conflict. Sessions expire after eight hours or a server restart. Losing a session keeps the open form available after signing in again.
 
@@ -44,7 +44,7 @@ The default data directory is `data/` (ignored by Git). Production uses `/var/li
 - `content.json`: page text and all entries, including drafts; private.
 - `uploads/`: image assets served through generated `/uploads/...` URLs.
 
-Back up the complete data directory securely and regularly. Content writes use atomic replacement. Run only one instance against the directory; this is not a multi-server database. Keep data on persistent disk, never inside an ephemeral deployment image. A fresh directory starts with the existing page copy, two projects, and an empty blog. Existing mock blog posts were sample content, not published articles.
+Back up the complete data directory securely and regularly; production does this daily, see [content backups](admin-deployment.md#content-backups). Content writes use atomic replacement. Run only one instance against the directory; this is not a multi-server database. Keep data on persistent disk, never inside an ephemeral deployment image. A fresh directory starts with the existing page copy, two projects, and an empty blog. Existing mock blog posts were sample content, not published articles.
 
 Deleting an entry or removing an image reference does not delete image files. This preserves images referenced by other entries; review unused uploads manually if storage grows. Uploaded URLs are public when known, even for draft images. Do not upload confidential material. Server-side validation caps each collection at 500 entries and the content request at 2 MB.
 

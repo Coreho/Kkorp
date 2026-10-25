@@ -245,6 +245,46 @@ test.describe('content administration', () => {
     expect((await (await page.request.get('/api/content')).json()).posts).toHaveLength(0);
   });
 
+  test('gives a published entry a web address that survives a new title', async ({ page }) => {
+    const headers = { Origin: 'http://127.0.0.1:4182', 'X-KK-Admin': '1' };
+    await signIn(page);
+    await page.getByRole('button', { name: /^Blog entries/ }).click();
+    await page.getByRole('button', { name: 'Add blog entry' }).click();
+    await page.getByLabel('Title', { exact: true }).fill('Lasting address');
+    await page.getByLabel('Post text').fill('An entry that keeps its address.');
+    await page.getByRole('button', { name: 'Publish entry', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('Entry published');
+    const published = async () => (await (await page.request.get('/api/content')).json()).posts;
+    expect((await published()).map((post) => post.slug)).toEqual(['lasting-address']);
+    await expect(page.getByText('Web address: /blog/lasting-address')).toBeVisible();
+
+    await page.getByLabel('Title', { exact: true }).fill('A renamed entry');
+    await page.getByRole('button', { name: 'Save published entry' }).click();
+    await expect(page.getByRole('status')).toContainText('Entry published');
+    expect((await published()).map((post) => [post.title, post.slug])).toEqual([['A renamed entry', 'lasting-address']]);
+
+    // A draft with the same title gets its own address and stays private.
+    await page.getByRole('button', { name: 'Add blog entry' }).click();
+    await page.getByLabel('Title', { exact: true }).fill('Lasting address');
+    await page.getByLabel('Post text').fill('A private draft.');
+    await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('Draft saved');
+    const snapshot = await (await page.request.get('/api/admin/content')).json();
+    expect(snapshot.posts.find((post) => post.body === 'A private draft.').slug).toBe('lasting-address-2');
+    expect((await published()).map((post) => post.slug)).toEqual(['lasting-address']);
+
+    const put = (data) => page.request.put('/api/admin/content', { headers: { ...headers, 'If-Match': String(snapshot.revision) }, data });
+    const clashing = structuredClone(snapshot);
+    for (const post of clashing.posts) post.slug = 'same-address';
+    expect((await put(clashing)).status()).toBe(400);
+    const malformed = structuredClone(snapshot);
+    malformed.posts[0].slug = '../Not An Address';
+    expect((await put(malformed)).status()).toBe(400);
+    const cleaned = structuredClone(snapshot);
+    cleaned.posts = cleaned.posts.filter((post) => post.title !== 'Lasting address' && post.title !== 'A renamed entry');
+    expect((await put(cleaned)).status()).toBe(200);
+  });
+
   test('rejects unauthorized writes, unsafe uploads, unsafe links, and stale saves', async ({ page, request }) => {
     const headers = { Origin: 'http://127.0.0.1:4182', 'X-KK-Admin': '1' };
     expect((await request.put('/api/admin/content', { headers, data: {} })).status()).toBe(401);
