@@ -141,6 +141,14 @@ export function Site() {
       });
   }, []);
 
+  // A link such as /#blog (the way back from an entry) opens that slide directly.
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if ((PANEL_ORDER as readonly string[]).includes(id)) {
+      goTo(id as PanelId);
+    }
+  }, []);
+
   // Arrow keys move the carousel, but never while the visitor is typing. Escape
   // returns to the landing page.
   useEffect(() => {

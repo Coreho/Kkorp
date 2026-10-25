@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { verifyPassword } from './admin-auth.mjs';
 import { contentDirectory, fail, loadContent, saveContent } from './content-store.mjs';
+import { assignSlugs } from '../mockups/koreokorp-v2/content-model.js';
 
 const repositoryRoot = fileURLToPath(new URL('../', import.meta.url));
 const siteRoot = resolve(repositoryRoot, 'mockups/koreokorp-v2');
@@ -130,7 +131,7 @@ const server = createServer(async (request, response) => {
     }
     if (path === '/api/content' && request.method === 'GET') {
       const content = await loadContent();
-      return json(response, 200, { pages: content.pages, posts: content.posts.filter((item) => item.status === 'published'), projects: content.projects.filter((item) => item.status === 'published') });
+      return json(response, 200, { pages: content.pages, posts: assignSlugs(content.posts).filter((item) => item.status === 'published'), projects: content.projects.filter((item) => item.status === 'published') });
     }
     if (!['GET', 'HEAD'].includes(request.method)) throw fail(405, 'Method not allowed.');
     let filePath;

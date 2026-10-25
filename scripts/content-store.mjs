@@ -1,7 +1,7 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { initialContent, pageFields } from '../mockups/koreokorp-v2/content-model.js';
+import { assignSlugs, initialContent, pageFields, slugPattern } from '../mockups/koreokorp-v2/content-model.js';
 
 export const contentDirectory = resolve(process.env.CONTENT_DIR || 'data');
 const contentPath = resolve(contentDirectory, 'content.json');
@@ -25,6 +25,7 @@ export function validateContent(input) {
   for (const kind of ['posts', 'projects']) {
     if (!Array.isArray(input[kind]) || input[kind].length > 500) throw fail(400, 'Use at most 500 entries per collection.');
     const ids = new Set();
+    const slugs = new Set();
     collections[kind] = input[kind].map((item) => {
       if (!item || !/^[a-zA-Z0-9-]{1,80}$/.test(item.id) || ids.has(item.id)) throw fail(400, 'Entry IDs must be unique.');
       ids.add(item.id);
@@ -39,6 +40,12 @@ export function validateContent(input) {
         entry.body = string(item.body, 100000, 'post body', true);
         entry.date = string(item.date, 10, 'date', true);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(entry.date) || !Number.isFinite(Date.parse(entry.date)) || new Date(entry.date).toISOString().slice(0, 10) !== entry.date) throw fail(400, 'Enter a valid date.');
+        if (item.slug !== undefined && item.slug !== '') {
+          entry.slug = string(item.slug, 80, 'web address');
+          if (!slugPattern.test(entry.slug)) throw fail(400, 'Use lowercase letters, numbers, and hyphens in the web address.');
+          if (slugs.has(entry.slug)) throw fail(400, 'Two blog entries use the same web address.');
+          slugs.add(entry.slug);
+        }
       } else {
         entry.description = string(item.description, 10000, 'description', true);
         entry.url = string(item.url, 2000, 'project link');
@@ -51,6 +58,7 @@ export function validateContent(input) {
       return entry;
     });
   }
+  collections.posts = assignSlugs(collections.posts);
   return { pages, ...collections };
 }
 
