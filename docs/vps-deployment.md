@@ -13,6 +13,21 @@ Both containers use immutable `koreokorp-app:<commit-sha12>` images on the
 external Docker network `edge`. Production and staging never share a process;
 promoting an image creates or replaces only `koreokorp-prod`.
 
+`www.koreokorp.com` is a Proxy Manager redirection host (id 1, Let's Encrypt
+certificate 14, renewed automatically by Proxy Manager). On HTTP and HTTPS it
+returns one 301 to `https://koreokorp.com` with the path and query string
+preserved, and serves no content. It was added on 2026-10-25 (TASK-026) by
+[`deploy/configure-www-redirect.py`](../deploy/configure-www-redirect.py),
+which backed up Proxy Manager's database to
+`/opt/stacks/koreokorp/backups/www-20261025/` first. To remove it, delete the
+redirection host in the Proxy Manager UI; do not restore that database copy,
+because it also holds every other site's configuration. To check it:
+
+```sh
+curl -sI http://www.koreokorp.com/blog?x=1 | grep -i '^location'   # https://koreokorp.com/blog?x=1
+curl -sI https://www.koreokorp.com/blog?x=1 | grep -i '^location'  # https://koreokorp.com/blog?x=1
+```
+
 The static prototype is retired. It is retained only as the root-only disaster
 archive `/opt/stacks/koreokorp/backups/retired-static-site-20261006T124120Z.tar.gz`
 (SHA-256 `678f88be95a476ed47dc8279333759c1652474099d4a44660464379284c11e17`).
