@@ -124,9 +124,17 @@ function updateCounts() {
   $('#post-count').textContent = content.posts.length;
   $('#project-count').textContent = content.projects.length;
 }
+// Disables controls while a request runs; the returned function re-enables only
+// those, so a control that is disabled on purpose, such as Move earlier on the
+// first project, stays disabled.
+function lock(scope, selector) {
+  const controls = [...scope.querySelectorAll(selector)].filter((element) => !element.disabled);
+  controls.forEach((element) => { element.disabled = true; });
+  return () => controls.forEach((element) => { element.disabled = false; });
+}
 async function save(next, success) {
   busy = true;
-  editor.querySelectorAll('button, input, textarea').forEach((element) => { element.disabled = true; });
+  const unlock = lock(editor, 'button, input, textarea, select');
   message('Saving…');
   try {
     content = await api('content', 'PUT', next, { 'If-Match': String(content.revision) });
@@ -138,7 +146,7 @@ async function save(next, success) {
   } catch (error) { message(error.message, true); }
   finally {
     busy = false;
-    editor.querySelectorAll('button, input, textarea').forEach((element) => { element.disabled = false; });
+    unlock();
   }
 }
 function renderPages() {
@@ -343,7 +351,7 @@ function mediaSlot(form, kind, label, value, onChange) {
       return;
     }
     busy = true;
-    form.querySelectorAll('button').forEach((element) => { element.disabled = true; });
+    const unlock = lock(form, 'button');
     message(video ? 'Uploading video…' : 'Uploading image…');
     try {
       use((await api('uploads', 'POST', { data: await readAsBase64(file) })).url);
@@ -352,7 +360,7 @@ function mediaSlot(form, kind, label, value, onChange) {
     finally {
       busy = false;
       input.value = '';
-      form.querySelectorAll('button').forEach((element) => { element.disabled = false; });
+      unlock();
     }
   });
   return slot;
