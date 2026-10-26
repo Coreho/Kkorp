@@ -1,0 +1,89 @@
+{
+  "about": "TASK-007 palette proposals. Semantic tokens per palette; panelAccents are About, Blog, Projects and Lobby in order. Rendered by scripts/palette-capture.mjs and reviewed in docs/design/palettes-2026-10.md.",
+  "palettes": [
+    {
+      "id": "indigo-night",
+      "name": "Indigo Night",
+      "note": "Today's palette, as the baseline.",
+      "scheme": "dark",
+      "tokens": {
+        "page": "#000000",
+        "surface": "#0c0c12",
+        "text": "#ffffff",
+        "textSoft": "#d4d4d8",
+        "muted": "#a1a1aa",
+        "primary": "#4b4ba0",
+        "secondary": "#8f47ae",
+        "accent": "#67e8f9",
+        "focus": "#a5b4fc",
+        "success": "#3ddc84",
+        "warning": "#fbbf24",
+        "danger": "#f87171"
+      },
+      "panelAccents": ["#7777ff", "#4b4ba0", "#c563e8", "#67e8f9"]
+    },
+    {
+      "id": "plum-dusk",
+      "name": "Plum Dusk",
+      "note": "Warm late-evening glass: plum surfaces, rose and amber light.",
+      "scheme": "dark",
+      "tokens": {
+        "page": "#0b0610",
+        "surface": "#160c1b",
+        "text": "#fff7f2",
+        "textSoft": "#eadcd6",
+        "muted": "#b9a5b0",
+        "primary": "#9b3f78",
+        "secondary": "#b8612e",
+        "accent": "#ffb38a",
+        "focus": "#ffcfa8",
+        "success": "#5fd39a",
+        "warning": "#f5c04f",
+        "danger": "#ff8597"
+      },
+      "panelAccents": ["#ff8fb1", "#c75a96", "#e39a5c", "#ffb38a"]
+    },
+    {
+      "id": "terminal-mint",
+      "name": "Terminal Mint",
+      "note": "The Projects panel's C:\\> monitor, grown into a palette: green-black glass, mint and sky.",
+      "scheme": "dark",
+      "tokens": {
+        "page": "#010605",
+        "surface": "#07110e",
+        "text": "#f0fff9",
+        "textSoft": "#cfe8de",
+        "muted": "#8fb4a6",
+        "primary": "#1d7a63",
+        "secondary": "#2a6aa0",
+        "accent": "#5eead4",
+        "focus": "#99f6e4",
+        "success": "#4ade80",
+        "warning": "#fcd34d",
+        "danger": "#fb7185"
+      },
+      "panelAccents": ["#5eead4", "#34b394", "#7dd3fc", "#a3e635"]
+    },
+    {
+      "id": "paper-day",
+      "name": "Paper Day",
+      "note": "A light option for visitors whose system asks for one: warm paper, ink, the same indigo.",
+      "scheme": "light",
+      "tokens": {
+        "page": "#f3f0e8",
+        "surface": "#fffdf8",
+        "text": "#17141f",
+        "textSoft": "#37323f",
+        "muted": "#5b5566",
+        "primary": "#4040a0",
+        "secondary": "#7a3a98",
+        "accent": "#0e7490",
+        "focus": "#4040a0",
+        "success": "#15803d",
+        "warning": "#92400e",
+        "danger": "#b91c1c"
+      },
+      "panelAccents": ["#4040a0", "#5b3fa0", "#7a3a98", "#0e7490"]
+    }
+  ]
+}
