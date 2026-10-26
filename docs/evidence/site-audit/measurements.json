@@ -1,0 +1,1182 @@
+{
+  "base": "https://koreokorp.com",
+  "captured": "2026-10-26T00:59:20.294Z",
+  "states": {
+    "desktop-live-about": {
+      "overflowX": 0,
+      "panel": {
+        "width": 1023,
+        "height": 630
+      },
+      "contentHiddenBelow": 0,
+      "usedHeightShare": 95,
+      "smallTargets": [
+        {
+          "name": "Previous section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "01About",
+          "width": 107,
+          "height": 36
+        },
+        {
+          "name": "02Blog",
+          "width": 97,
+          "height": 36
+        },
+        {
+          "name": "03Projects",
+          "width": 131,
+          "height": 36
+        },
+        {
+          "name": "04Lobby",
+          "width": 105,
+          "height": 36
+        },
+        {
+          "name": "Next section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "Copy",
+          "width": 61,
+          "height": 31
+        },
+        {
+          "name": "Enter The Lobby →",
+          "width": 147,
+          "height": 31
+        }
+      ],
+      "contrast": {
+        "[data-panel=\"about\"] .eyebrow": {
+          "rendered": 3.6,
+          "text": 7.56
+        },
+        "[data-panel=\"about\"] .long": {
+          "rendered": 10.42,
+          "text": 13.11
+        },
+        "[data-panel=\"about\"] .tl li": {
+          "rendered": 8.4,
+          "text": 12.72
+        },
+        "[data-panel=\"about\"] .links li": {
+          "rendered": 9.39,
+          "text": 18.8
+        },
+        "#cnav button[aria-current=\"true\"]": {
+          "rendered": 18.59,
+          "text": 5.63
+        },
+        "#cnav button[aria-current=\"false\"] b": {
+          "rendered": 16.03,
+          "text": 16.02
+        }
+      }
+    },
+    "desktop-live-blog": {
+      "overflowX": 0,
+      "panel": {
+        "width": 1023,
+        "height": 630
+      },
+      "contentHiddenBelow": 0,
+      "usedHeightShare": 95,
+      "smallTargets": [
+        {
+          "name": "Previous section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "01About",
+          "width": 107,
+          "height": 36
+        },
+        {
+          "name": "02Blog",
+          "width": 97,
+          "height": 36
+        },
+        {
+          "name": "03Projects",
+          "width": 131,
+          "height": 36
+        },
+        {
+          "name": "04Lobby",
+          "width": 105,
+          "height": 36
+        },
+        {
+          "name": "Next section",
+          "width": 36,
+          "height": 36
+        }
+      ],
+      "contrast": {
+        "[data-panel=\"blog\"] .admin-note": {
+          "rendered": 5.12,
+          "text": 7.6
+        },
+        "#cnav button[aria-current=\"true\"]": {
+          "rendered": 18.17,
+          "text": 5.65
+        },
+        "#cnav button[aria-current=\"false\"] b": {
+          "rendered": 15.95,
+          "text": 15.93
+        }
+      }
+    },
+    "desktop-live-projects": {
+      "overflowX": 0,
+      "panel": {
+        "width": 1023,
+        "height": 630
+      },
+      "contentHiddenBelow": 0,
+      "usedHeightShare": 95,
+      "smallTargets": [
+        {
+          "name": "Previous section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "01About",
+          "width": 107,
+          "height": 36
+        },
+        {
+          "name": "02Blog",
+          "width": 97,
+          "height": 36
+        },
+        {
+          "name": "03Projects",
+          "width": 131,
+          "height": 36
+        },
+        {
+          "name": "04Lobby",
+          "width": 105,
+          "height": 36
+        },
+        {
+          "name": "Next section",
+          "width": 36,
+          "height": 36
+        }
+      ],
+      "contrast": {
+        "[data-panel=\"projects\"] .project-record": {
+          "rendered": 7.59,
+          "text": 17.8
+        },
+        "#cnav button[aria-current=\"true\"]": {
+          "rendered": 18.56,
+          "text": 5.58
+        },
+        "#cnav button[aria-current=\"false\"] b": {
+          "rendered": 15.86,
+          "text": 15.98
+        }
+      }
+    },
+    "desktop-live-chat": {
+      "overflowX": 0,
+      "panel": {
+        "width": 1023,
+        "height": 630
+      },
+      "contentHiddenBelow": 0,
+      "usedHeightShare": 95,
+      "smallTargets": [
+        {
+          "name": "Previous section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "01About",
+          "width": 107,
+          "height": 36
+        },
+        {
+          "name": "02Blog",
+          "width": 97,
+          "height": 36
+        },
+        {
+          "name": "03Projects",
+          "width": 131,
+          "height": 36
+        },
+        {
+          "name": "04Lobby",
+          "width": 105,
+          "height": 36
+        },
+        {
+          "name": "Next section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "Minimize chat",
+          "width": 18,
+          "height": 16
+        },
+        {
+          "name": "Leave chat room",
+          "width": 18,
+          "height": 16
+        },
+        {
+          "name": "Insert smiley",
+          "width": 27,
+          "height": 22
+        },
+        {
+          "name": "",
+          "width": 290,
+          "height": 26
+        },
+        {
+          "name": "Sign On",
+          "width": 83,
+          "height": 26
+        }
+      ],
+      "contrast": {
+        "#cnav button[aria-current=\"true\"]": {
+          "rendered": 18.59,
+          "text": 5.61
+        },
+        "#cnav button[aria-current=\"false\"] b": {
+          "rendered": 15.89,
+          "text": 15.96
+        }
+      }
+    },
+    "desktop-live": {
+      "consoleErrors": []
+    },
+    "desktop-populated-blog": {
+      "overflowX": 0,
+      "panel": {
+        "width": 1023,
+        "height": 630
+      },
+      "contentHiddenBelow": 9,
+      "usedHeightShare": 95,
+      "smallTargets": [
+        {
+          "name": "Previous section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "01About",
+          "width": 107,
+          "height": 36
+        },
+        {
+          "name": "02Blog",
+          "width": 97,
+          "height": 36
+        },
+        {
+          "name": "03Projects",
+          "width": 131,
+          "height": 36
+        },
+        {
+          "name": "04Lobby",
+          "width": 105,
+          "height": 36
+        },
+        {
+          "name": "Next section",
+          "width": 36,
+          "height": 36
+        }
+      ]
+    },
+    "desktop-populated-projects": {
+      "overflowX": 0,
+      "panel": {
+        "width": 1023,
+        "height": 630
+      },
+      "contentHiddenBelow": 236,
+      "usedHeightShare": 95,
+      "smallTargets": [
+        {
+          "name": "Previous section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "01About",
+          "width": 107,
+          "height": 36
+        },
+        {
+          "name": "02Blog",
+          "width": 97,
+          "height": 36
+        },
+        {
+          "name": "03Projects",
+          "width": 131,
+          "height": 36
+        },
+        {
+          "name": "04Lobby",
+          "width": 105,
+          "height": 36
+        },
+        {
+          "name": "Next section",
+          "width": 36,
+          "height": 36
+        }
+      ]
+    },
+    "desktop-entry-notes-from-the-workshop": {
+      "overflowX": 0,
+      "column": 672
+    },
+    "desktop-entry-a-very-long-title": {
+      "overflowX": 0,
+      "column": 672
+    },
+    "desktop-empty-blog": {
+      "overflowX": 0,
+      "panel": {
+        "width": 1023,
+        "height": 630
+      },
+      "contentHiddenBelow": 0,
+      "usedHeightShare": 95,
+      "smallTargets": [
+        {
+          "name": "Previous section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "01About",
+          "width": 107,
+          "height": 36
+        },
+        {
+          "name": "02Blog",
+          "width": 97,
+          "height": 36
+        },
+        {
+          "name": "03Projects",
+          "width": 131,
+          "height": 36
+        },
+        {
+          "name": "04Lobby",
+          "width": 105,
+          "height": 36
+        },
+        {
+          "name": "Next section",
+          "width": 36,
+          "height": 36
+        }
+      ]
+    },
+    "desktop-empty-projects": {
+      "overflowX": 0,
+      "panel": {
+        "width": 1023,
+        "height": 630
+      },
+      "contentHiddenBelow": 0,
+      "usedHeightShare": 95,
+      "smallTargets": [
+        {
+          "name": "Previous section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "01About",
+          "width": 107,
+          "height": 36
+        },
+        {
+          "name": "02Blog",
+          "width": 97,
+          "height": 36
+        },
+        {
+          "name": "03Projects",
+          "width": 131,
+          "height": 36
+        },
+        {
+          "name": "04Lobby",
+          "width": 105,
+          "height": 36
+        },
+        {
+          "name": "Next section",
+          "width": 36,
+          "height": 36
+        }
+      ]
+    },
+    "phone-live-about": {
+      "overflowX": 0,
+      "panel": {
+        "width": 320,
+        "height": 694
+      },
+      "contentHiddenBelow": 14,
+      "usedHeightShare": 95,
+      "smallTargets": [
+        {
+          "name": "Previous section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "01About",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "02Blog",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "03Projects",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "04Lobby",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "Next section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "Copy",
+          "width": 61,
+          "height": 31
+        },
+        {
+          "name": "Enter The Lobby →",
+          "width": 147,
+          "height": 31
+        }
+      ],
+      "contrast": {
+        "[data-panel=\"about\"] .eyebrow": {
+          "rendered": 6.01,
+          "text": 7.34
+        },
+        "[data-panel=\"about\"] .long": {
+          "rendered": 11.29,
+          "text": 13.11
+        },
+        "[data-panel=\"about\"] .tl li": {
+          "rendered": 9.27,
+          "text": 12.72
+        },
+        "[data-panel=\"about\"] .links li": {
+          "rendered": 10.35,
+          "text": 17.75
+        },
+        "#cnav button[aria-current=\"true\"]": {
+          "rendered": 11.08,
+          "text": 5.68
+        }
+      }
+    },
+    "phone-live-blog": {
+      "overflowX": 0,
+      "panel": {
+        "width": 320,
+        "height": 694
+      },
+      "contentHiddenBelow": 0,
+      "usedHeightShare": 95,
+      "smallTargets": [
+        {
+          "name": "Previous section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "01About",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "02Blog",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "03Projects",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "04Lobby",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "Next section",
+          "width": 36,
+          "height": 36
+        }
+      ],
+      "contrast": {
+        "[data-panel=\"blog\"] .admin-note": {
+          "rendered": 5.15,
+          "text": 7.61
+        },
+        "#cnav button[aria-current=\"true\"]": {
+          "rendered": 11.76,
+          "text": 5.7
+        }
+      }
+    },
+    "phone-live-projects": {
+      "overflowX": 0,
+      "panel": {
+        "width": 320,
+        "height": 694
+      },
+      "contentHiddenBelow": 0,
+      "usedHeightShare": 95,
+      "smallTargets": [
+        {
+          "name": "Previous section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "01About",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "02Blog",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "03Projects",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "04Lobby",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "Next section",
+          "width": 36,
+          "height": 36
+        }
+      ],
+      "contrast": {
+        "[data-panel=\"projects\"] .project-record": {
+          "rendered": 7.6,
+          "text": 17.9
+        },
+        "#cnav button[aria-current=\"true\"]": {
+          "rendered": 11.93,
+          "text": 5.66
+        }
+      }
+    },
+    "phone-live-chat": {
+      "overflowX": 0,
+      "panel": {
+        "width": 320,
+        "height": 694
+      },
+      "contentHiddenBelow": 0,
+      "usedHeightShare": 99,
+      "smallTargets": [
+        {
+          "name": "Previous section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "01About",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "02Blog",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "03Projects",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "04Lobby",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "Next section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "Minimize chat",
+          "width": 18,
+          "height": 16
+        },
+        {
+          "name": "Leave chat room",
+          "width": 18,
+          "height": 16
+        },
+        {
+          "name": "Insert smiley",
+          "width": 27,
+          "height": 22
+        },
+        {
+          "name": "",
+          "width": 236,
+          "height": 26
+        },
+        {
+          "name": "Sign On",
+          "width": 83,
+          "height": 26
+        }
+      ],
+      "contrast": {
+        "#cnav button[aria-current=\"true\"]": {
+          "rendered": 11.09,
+          "text": 5.66
+        }
+      }
+    },
+    "phone-live": {
+      "consoleErrors": []
+    },
+    "phone-populated-blog": {
+      "overflowX": 0,
+      "panel": {
+        "width": 320,
+        "height": 694
+      },
+      "contentHiddenBelow": 113,
+      "usedHeightShare": 95,
+      "smallTargets": [
+        {
+          "name": "Previous section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "01About",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "02Blog",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "03Projects",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "04Lobby",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "Next section",
+          "width": 36,
+          "height": 36
+        }
+      ]
+    },
+    "phone-populated-projects": {
+      "overflowX": 0,
+      "panel": {
+        "width": 320,
+        "height": 694
+      },
+      "contentHiddenBelow": 822,
+      "usedHeightShare": 95,
+      "smallTargets": [
+        {
+          "name": "Previous section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "01About",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "02Blog",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "03Projects",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "04Lobby",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "Next section",
+          "width": 36,
+          "height": 36
+        }
+      ]
+    },
+    "phone-entry-notes-from-the-workshop": {
+      "overflowX": 0,
+      "column": 358
+    },
+    "phone-entry-a-very-long-title": {
+      "overflowX": 0,
+      "column": 358
+    },
+    "phone-empty-blog": {
+      "overflowX": 0,
+      "panel": {
+        "width": 320,
+        "height": 694
+      },
+      "contentHiddenBelow": 0,
+      "usedHeightShare": 95,
+      "smallTargets": [
+        {
+          "name": "Previous section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "01About",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "02Blog",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "03Projects",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "04Lobby",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "Next section",
+          "width": 36,
+          "height": 36
+        }
+      ]
+    },
+    "phone-empty-projects": {
+      "overflowX": 0,
+      "panel": {
+        "width": 320,
+        "height": 694
+      },
+      "contentHiddenBelow": 0,
+      "usedHeightShare": 95,
+      "smallTargets": [
+        {
+          "name": "Previous section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "01About",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "02Blog",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "03Projects",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "04Lobby",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "Next section",
+          "width": 36,
+          "height": 36
+        }
+      ]
+    },
+    "desktop-keyboard": {
+      "stops": [
+        {
+          "name": "Back to the start",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "Previous section",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "01About",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "02Blog",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "03Projects",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "04Lobby",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "Next section",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "Copy",
+          "panel": "about",
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "Enter The Lobby →",
+          "panel": "about",
+          "ring": true,
+          "onScreen": true
+        },
+        null,
+        {
+          "name": "Back to the start",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "Previous section",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "01About",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "02Blog",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "03Projects",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "04Lobby",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "Next section",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "Copy",
+          "panel": "about",
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "Enter The Lobby →",
+          "panel": "about",
+          "ring": true,
+          "onScreen": true
+        },
+        null,
+        {
+          "name": "Back to the start",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "Previous section",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "01About",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "02Blog",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "03Projects",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "04Lobby",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "Next section",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "Copy",
+          "panel": "about",
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "Enter The Lobby →",
+          "panel": "about",
+          "ring": true,
+          "onScreen": true
+        },
+        null,
+        {
+          "name": "Back to the start",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "Previous section",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "01About",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "02Blog",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "03Projects",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "04Lobby",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "Next section",
+          "panel": null,
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "Copy",
+          "panel": "about",
+          "ring": true,
+          "onScreen": true
+        },
+        {
+          "name": "Enter The Lobby →",
+          "panel": "about",
+          "ring": true,
+          "onScreen": true
+        },
+        null
+      ]
+    },
+    "zoom200-about": {
+      "overflowX": 0,
+      "panel": {
+        "width": 560,
+        "height": 250
+      },
+      "contentHiddenBelow": 209,
+      "usedHeightShare": 92,
+      "smallTargets": [
+        {
+          "name": "Previous section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "01About",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "02Blog",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "03Projects",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "04Lobby",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "Next section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "Copy",
+          "width": 61,
+          "height": 31
+        }
+      ],
+      "nav": {
+        "top": 330,
+        "bottom": 380,
+        "fits": true
+      }
+    },
+    "zoom200-projects": {
+      "overflowX": 0,
+      "panel": {
+        "width": 560,
+        "height": 250
+      },
+      "contentHiddenBelow": 92,
+      "usedHeightShare": 92,
+      "smallTargets": [
+        {
+          "name": "Previous section",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "name": "01About",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "02Blog",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "03Projects",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "04Lobby",
+          "width": 45,
+          "height": 36
+        },
+        {
+          "name": "Next section",
+          "width": 36,
+          "height": 36
+        }
+      ]
+    }
+  }
+}

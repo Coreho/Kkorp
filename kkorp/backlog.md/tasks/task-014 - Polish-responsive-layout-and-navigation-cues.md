@@ -4,7 +4,7 @@ title: Polish responsive layout and navigation cues
 status: To Do
 assignee: []
 created_date: '2026-10-04 03:15'
-updated_date: '2026-10-04 05:43'
+updated_date: '2026-10-26 01:10'
 labels:
   - design
   - frontend
@@ -38,3 +38,9 @@ The live prototype is functional at phone width, but section peeks, scrollable c
 - [ ] #2 Relevant checks pass; new interactions have regression coverage, and npm test plus git diff --check pass before committing.
 - [ ] #3 Documentation is updated where behavior or workflow changes, and remaining limitations are recorded.
 <!-- DOD:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-10-25 (TASK-006 review): R3 empty Blog reads as loading; R6 no cue for content hidden below (822px on phone Projects with six projects); R7 phone nav shows and announces only numbers ('01' to '04' in the accessibility tree); R10 the jelly bubble overlaps the heading number at 390px; R11 36px nav controls and 18x16px Lobby window buttons. See docs/design/site-review-2026-10.md.
+<!-- SECTION:NOTES:END -->
