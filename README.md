@@ -119,6 +119,14 @@ computer by a scheduled task; see
 [content backups](docs/admin-deployment.md#content-backups) for checking and
 restoring. `www.koreokorp.com` redirects to `https://koreokorp.com`.
 
+## Design review
+
+[The October 2026 site review](docs/design/site-review-2026-10.md) ranks what
+to improve on the live site at desktop and phone widths, with screenshots and
+measurements in `docs/evidence/site-audit/`. Recapture after design changes
+with `node scripts/site-audit-capture.mjs` (set `AUDIT_BASE` for staging or a
+local build).
+
 ## Task management
 
 Backlog.md is pinned as a development dependency and installed by `npm ci`.

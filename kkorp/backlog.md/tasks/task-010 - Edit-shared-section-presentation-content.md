@@ -4,7 +4,7 @@ title: Edit shared section presentation content
 status: To Do
 assignee: []
 created_date: '2026-10-04 03:14'
-updated_date: '2026-10-25 05:56'
+updated_date: '2026-10-26 01:09'
 labels:
   - admin
   - cms
@@ -44,4 +44,6 @@ About, Blog, and Projects contain supporting copy embedded in the prototype. The
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-10-25 (TASK-021): the file-backed editor (PR #3) meets #2 and #4. Evidence: tests/admin.spec.js 'edits page copy, persists after reload, and renders text safely'; failed saves leave content.json unchanged (atomic replace, revision check); defaults live in mockups/koreokorp-v2/content-model.js (defaultPages) and lib/useContent.tsx falls back to them when /api/content fails, documented in README.md and docs/admin-deployment.md. Open: #1 intros, supporting copy and button labels are editable, but call-to-action destinations are not, and there is no preview of the public panel; #3 text renders as text and panel identifiers are not editable, but every field shares one 4000-character limit rather than per-field limits.
+
+2026-10-25 (TASK-006 review, R2): the section buttons this task's AC#1 calls 'call-to-action' are hidden on the live site (.panel .action { display: none }), and the section intros are hidden whenever a panel is open (.panel.open .rest { display: none }); none was ever on screen at either width. The review recommends showing each intro in the open panel and dropping the button-label fields, which would reduce AC#1 to intro and supporting copy. Waiting on the owner's choice before building.
 <!-- SECTION:NOTES:END -->
