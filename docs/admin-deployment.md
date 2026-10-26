@@ -1,6 +1,8 @@
 # Live admin deployment · 2026-10-24 UTC
 
-Update, 2026-10-25: the public and staging app run `koreokorp-app:d38560941f42` and the editor runs `koreokorp-control:d38560941f42`, both built from `main` (TASK-020), with the Compose healthcheck from TASK-023. The images below are retained for rollback; see [the deployment notes](vps-deployment.md#deploy-the-content-service).
+Update, 2026-10-26 UTC: the app and editor run `d374c6a610be` (TASK-004 and TASK-012). The editor accepts MP4 and WebM videos up to 15 MB. Proxy host 12's body limit is therefore 21m (was 8m), and `backup-content.sh` also checks video references. See [the current release](vps-deployment.md#current-release).
+
+Earlier update, 2026-10-25: the public and staging app run `koreokorp-app:d38560941f42` and the editor runs `koreokorp-control:d38560941f42`, both built from `main` (TASK-020), with the Compose healthcheck from TASK-023. The images below are retained for rollback; see [the deployment notes](vps-deployment.md#deploy-the-content-service).
 
 Earlier update: the public and staging app used `koreokorp-app:7ff44e8a1f43`. Project cards show only their uploaded logo on the front and description on the back; the bundled KoreoKorp logo is the fallback. Tiles are capped at 280 × 220px and link directly to their configured project URL in a new tab. Desktop hover adds a glow, 4px lift, and 4.5% enlargement while revealing the description; keyboard focus also reveals the description. Phone taps activate the link immediately. Reduced-motion preferences disable movement. The preceding app images are retained for rollback. Historical details below describe the initial admin deployment.
 

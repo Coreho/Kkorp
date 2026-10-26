@@ -87,31 +87,36 @@ service's routes, password reset, backups and rollback.
 
 ## Current release
 
-The current production and staging image is `koreokorp-app:d38560941f42`
-(revision `d38560941f42ef04c54d3e95e2b01ac0f2f3750a`, `main` after PRs #3–#10,
-promoted 2026-10-25), recorded in `current-release-prod`. The content service
-runs `koreokorp-control:d38560941f42` from the same commit. This release adds
-blog entry pages and the content-service health check, and restores the
-`<commit-sha12>` lineage.
+The current production and staging image is `koreokorp-app:d374c6a610be`
+(revision `d374c6a610be`, `main` after PRs #13–#16, promoted 2026-10-26 UTC),
+recorded in `current-release-prod`. The content service runs
+`koreokorp-control:d374c6a610be` from the same commit. The release adds the
+editor's web address field and Markdown preview (TASK-004), and project order,
+technologies, stage, source link, preview video and media reuse, with a loading
+state and logo fallback on the Projects panel (TASK-012).
 
-The previous production image is `koreokorp-app:7ff44e8a1f43`
-(`previous-release-prod`). It and `koreokorp-app:12b7742248c2` and
+Release checks, 2026-10-26 UTC:
+- CI on PR #16's final commit passed all five jobs.
+- A content backup was taken first (`koreokorp-content-20261026T022628Z`), and
+  the updated `backup-content.sh` (it now checks video references) was
+  installed to `~/koreokorp-backup/`.
+- The new control image ran on a copy of the live content before the switch:
+  healthy, serving content, and the live content passed the new validation.
+- Staging passed the TLS suite before promotion, and production passed it after.
+- `npm run health:check` passed all five lines, and the live Projects panel
+  showed only the published project, with no console errors.
+- Proxy host 12 (the editor) now allows request bodies up to 21 MB, so a 15 MB
+  video fits once base64-encoded. See the operational notes.
+
+The previous production image is `koreokorp-app:d38560941f42`
+(`previous-release-prod`, promoted 2026-10-25 after CI on PR #10 and the
+staging and production TLS suites), with `koreokorp-control:d38560941f42`; its
+Compose file is `backups/compose-control.yaml.20261026-d38560941f42`.
+
+The older images `koreokorp-app:7ff44e8a1f43`, `koreokorp-app:12b7742248c2` and
 `koreokorp-control:20261024` were built from a source folder on the server
 (`/home/korebear/kkorp-admin-release-20261024`), so their tags are not commits
 in this repository. TASK-020 committed that source.
-
-Release checks, 2026-10-25:
-- CI on PR #10 passed `npm test`, lint, typecheck, the application suite and
-  both image builds.
-- Staging passed the TLS suite before promotion, and production passed it after.
-- `npm run health:check` passed all five lines against production.
-
-The last release built from a commit was `koreokorp-app:a0f696cb46b5`
-(revision `a0f696cb46b5df6247135f3f87c09b20cf5cf262`, promoted 2026-10-06). It
-keeps the jelly swarm animating regardless of `prefers-reduced-motion` per the
-owner's decision, and passed the repository suite, lint, typecheck, build, the
-application suite and the staging and production TLS suites before and after
-promotion.
 
 ## Host files
 
@@ -218,6 +223,14 @@ CI=1 KOREOKORP_STAGING=1 \
 
 - Manage proxy hosts through the Nginx Proxy Manager API or UI. Never hand-edit
   generated files under `/opt/stacks/npm/data/nginx/proxy_host/`.
+  Exception, 2026-10-26 UTC: with no Proxy Manager credentials available, the
+  agent raised host 12's `client_max_body_size` from 8m to 21m in both places
+  Proxy Manager keeps it: the host's advanced configuration in
+  `database.sqlite` and the generated `12.conf`. It then ran `nginx -t` and
+  reloaded. Because the database matches, saving host 12 in the UI keeps 21m.
+  Backups from before the change are `backups/npm-database.sqlite.20261026` and
+  `backups/npm-proxy-host-12.conf.20261026`. The owner may prefer to re-save
+  host 12 in the UI to confirm it.
 - Docker is enabled at boot and both services use `restart: unless-stopped`.
 - `/api/health` is liveness-only and does not restart-loop the site during an
   external dependency outage.

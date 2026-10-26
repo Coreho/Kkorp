@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-04 03:01'
-updated_date: '2026-10-26 00:27'
+updated_date: '2026-10-26 02:31'
 labels:
   - blog
   - admin
@@ -60,6 +60,8 @@ The site needs an owner-only writing workflow so blog posts can move from draft 
 2026-10-25 (TASK-021): the file-backed editor (PR #3) meets #2 and #3. Evidence: tests/admin.spec.js 'publishes a readable blog entry and can unpublish it' and 'rejects unauthorized writes, unsafe uploads, unsafe links, and stale saves'; tests/app/content.spec.js 'published content updates the React panels and safely renders complete entries'; the public API returns published entries only. Open: #1 posts are plain text with title, date, excerpt, body and cover image, with no slug and no Markdown (a plain-text preview exists); #4 unsaved-change warnings, session-expiry recovery, stale-save conflicts and validation errors are handled, but slug conflicts and Markdown safety do not apply yet. Build on the Supabase schema from TASK-017 (posts.slug, posts.body_md).
 
 2026-10-25: built on the file-backed editor (field names match the planned Supabase posts.slug). The Markdown reader moved from lib/markdown.ts to mockups/koreokorp-v2/markdown.js (+ .d.ts), so the editor preview and the public entry page share it. Evidence, tests/admin.spec.js (17/17): 'chooses an entry web address and previews its Markdown safely' covers create with title, address, date and introduction; the address following the title, typed text tidied (First Light → first-light), title edits no longer moving it; preview of heading, bold, italic, list, safe link, dropped javascript: link and <script> shown as text with window.__ran undefined; live preview refresh; publish with slug, date and excerpt in /api/content; a taken address blocked by the field with the stored revision unchanged; delete of both entries. 'publishes a readable blog entry and can unpublish it' covers draft, publish and unpublish; 'gives a published entry a web address that survives a new title' covers edit; server 400s for duplicate and malformed addresses; stale saves 409; unsaved-change and session-expiry tests unchanged. npm test 22 passed (4 skipped locally), app suite 37 passed (2 staging skips) including the JS budgets, lint 0 errors, typecheck clean, build OK.
+
+2026-10-26 UTC: live in koreokorp-control:d374c6a610be and koreokorp-app:d374c6a610be (docs/vps-deployment.md, current release).
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
