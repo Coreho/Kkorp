@@ -84,6 +84,10 @@ main { margin-left: 240px; padding: 48px 5vw 24px; max-width: 1600px; }
 .field { margin-bottom: 24px; }
 .field:last-child { margin-bottom: 0; }
 .helper { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+.helper.error { color: var(--danger); }
+.slug-row { display: flex; }
+.slug-prefix { display: flex; align-items: center; padding: 0 12px; border: 1px solid var(--rule); border-right: 0; border-radius: 8px 0 0 8px; background: var(--card); color: var(--muted); }
+.slug-row input { border-radius: 0 8px 8px 0; }
 .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 16px 0; }
 .actions .danger { margin-left: auto; color: var(--danger); border-color: transparent; }
 .entry-heading { display: flex; gap: 16px; justify-content: space-between; margin-bottom: 24px; }
@@ -92,6 +96,19 @@ main { margin-left: 240px; padding: 48px 5vw 24px; max-width: 1600px; }
 .remove-image { margin-top: 12px; }
 .body-input { min-height: 300px; }
 .entry-preview { padding: 24px 0; border-top: 1px solid var(--rule); }
+.preview-article { max-width: 65ch; color: var(--ink-2); overflow-wrap: anywhere; }
+.preview-article .preview-title { font-size: 28px; color: var(--ink); margin: 0 0 4px; }
+.preview-article :is(h2, h3, h4) { color: var(--ink); margin: 28px 0 8px; }
+.preview-article h3 { font-size: 17px; }
+.preview-article h4 { font-size: 15px; }
+.preview-date { font-size: 13px; }
+.preview-article .preview-standfirst { color: var(--ink); font-size: 17px; }
+.preview-article :is(p, ul, ol, blockquote, pre) { margin: 0 0 16px; }
+.preview-article a { color: var(--cyan); }
+.preview-article code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .92em; }
+.preview-article pre { overflow-x: auto; padding: 12px 14px; border-radius: 8px; background: var(--field); }
+.preview-article blockquote { padding-left: 16px; border-left: 2px solid var(--primary); }
+.preview-article hr { border: 0; border-top: 1px solid var(--rule); margin: 24px 0; }
 .entry-preview summary { cursor: pointer; color: var(--ink-2); min-height: 44px; padding: 10px 0; }
 .preview-content { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 65ch; color: var(--ink-2); }
 .empty { padding: 40px 0; }
