@@ -110,5 +110,13 @@ outside the server and confirm all five lines pass.
 **Status, 2026-10-25.** The control image with `/api/health` and the Compose
 healthcheck is live (`koreokorp-control:d38560941f42`, healthy). The monitor was
 disabled during the release and re-enabled afterwards, by the repository owner's
-account. A manual run passed all five checks. Email delivery for a failed run
-has not yet been confirmed.
+account. A manual run passed all five checks.
+
+Email delivery is confirmed. A drill run pointed at an unreachable host failed
+at 23:51:52 UTC (run 40246638625). GitHub's "Run failed: Live site health" email
+reached the owner's inbox at 23:52:13, 21 seconds later.
+
+The schedule is the weak point. The cron asks for a run every ten minutes, but
+GitHub ran the scheduled job at 18:40, 21:15 and 23:21 UTC that day, gaps of
+about two hours. Until an external uptime service checks the same three
+addresses, expect a failure to be reported hours after it starts, not minutes.
