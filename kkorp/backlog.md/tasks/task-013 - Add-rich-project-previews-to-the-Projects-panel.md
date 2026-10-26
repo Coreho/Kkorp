@@ -4,7 +4,7 @@ title: Add rich project previews to the Projects panel
 status: To Do
 assignee: []
 created_date: '2026-10-04 03:14'
-updated_date: '2026-10-26 01:10'
+updated_date: '2026-10-26 01:15'
 labels:
   - projects
   - design
@@ -47,5 +47,5 @@ Text-only project placeholders do not show what the work looks like or make indi
 <!-- SECTION:NOTES:BEGIN -->
 2026-10-25 (TASK-021): partly started. Project cards show the uploaded logo on the front and the description on the back, link to the project URL in a new tab, reveal the description on keyboard focus, and fit 390px (docs/design/project-cards.md; tests/app/content.spec.js 'phone project tiles stay compact and open their destination on the first tap'). Still open: video previews, technologies and status on cards, a detail view, and measured lazy loading and layout-shift checks.
 
-2026-10-25 (TASK-006 review): R4 the Projects scene paints over cards at 390px with two or more projects; R5 cards show no title on the front face; R8 short content leaves the desktop panel mostly empty (experiment). See docs/design/site-review-2026-10.md.
+2026-10-25 (TASK-006 review): R4 the Projects scene paints over cards at 390px with two or more projects; R5 projects without an image all fall back to the same KoreoKorp logo, so they cannot be told apart (logo-only fronts stay, per the owner's request); R8 short content leaves the desktop panel mostly empty (experiment). See docs/design/site-review-2026-10.md.
 <!-- SECTION:NOTES:END -->

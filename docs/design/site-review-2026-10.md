@@ -67,7 +67,7 @@ the right answer needs trying.
 | R2 | The editor offers copy that visitors never see | High | S | Quick | TASK-010 |
 | R3 | The empty Blog looks like it is still loading | High | S | Quick | TASK-014 |
 | R4 | On the phone, the Projects scene draws over the cards | High | S | Quick | TASK-013 |
-| R5 | Project cards do not show the project's name | Medium–high | S | Quick | TASK-013 |
+| R5 | Projects without an image all look the same | Medium | S | Quick | TASK-013 |
 | R6 | Nothing says a panel has more below | Medium | S | Quick | TASK-014 |
 | R7 | Phone navigation is numbers only, for sighted and screen reader users | Medium–high | S | Quick | TASK-014 |
 | R8 | Short content leaves desktop panels mostly empty | Medium | M | Experiment | TASK-013, TASK-014 |
@@ -182,20 +182,27 @@ pattern behind it, at both widths.
 **Done when:** at 390px, with two or more projects, no scene element is drawn
 over a card, and a test checks it.
 
-### R5. Project cards do not show the project's name
+### R5. Projects without an image all look the same
 
 **Evidence:**
 
-- The front of each card shows only its image. The title and description are
-  on the back, revealed by hover or focus, and in the accessible name.
-- Projects without an image fall back to the KoreoKorp logo, so several cards
-  can look identical.
+- The owner chose logo-only fronts and description-only backs
+  ([project-cards.md](project-cards.md)). That works for a project with its
+  own logo.
+- A project without an uploaded image falls back to the KoreoKorp logo. Two or
+  more such projects show identical tiles, with nothing to tell them apart until
+  hover or focus.
 
-**Recommendation:** add the title to the front face, below the image. This is
-the first step of TASK-013's rich previews and belongs there.
+**Recommendation:**
 
-**Done when:** every card's front names its project at both widths, and long
-titles wrap without overflow.
+- Keep logo-only fronts for projects that have an image.
+- For a project without one, show its title on the front instead of the site
+  logo, in the same face and material.
+- This belongs with TASK-013's text-only fallback (its AC#1).
+
+**Done when:** at both widths, projects without images are distinguishable at
+a glance, long titles wrap without overflow, and the owner confirms that the
+fallback keeps the look they asked for.
 
 ### R6. Nothing says a panel has more below
 
