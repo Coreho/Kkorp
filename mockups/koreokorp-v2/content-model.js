@@ -55,14 +55,24 @@ export const pageFields = [
   ['The Lobby', 'chatAction', 'Lobby button', '[data-panel="chat"] [data-open] span', defaultPages.chatAction],
 ];
 
+// Where a project stands, shown with it. An empty stage shows nothing.
+export const projectStages = { building: 'In progress', live: 'Live', paused: 'Paused', archived: 'Archived' };
+
+// Every project field with its empty value. Content saved before a field existed
+// is read with these defaults, so older content.json files stay valid.
+export const emptyProject = {
+  title: '', description: '', technologies: [], stage: '', url: '', sourceUrl: '',
+  image: '', video: '', imageAlt: '', mediaDecorative: false, status: 'draft',
+};
+
 export function initialContent() {
   return {
     revision: 0,
     pages: { ...defaultPages },
     posts: [],
     projects: [
-      { id: 'koreokorp-v2', title: 'KoreoKorp V2', description: 'This site. Four panels, one blog, one chat room.', url: '', image: '', imageAlt: '', status: 'published' },
-      { id: 'the-lobby', title: 'The Lobby', description: 'A shared chat room with screen names and two resident bots.', url: '', image: '', imageAlt: '', status: 'published' },
+      { ...emptyProject, id: 'koreokorp-v2', title: 'KoreoKorp V2', description: 'This site. Four panels, one blog, one chat room.', status: 'published' },
+      { ...emptyProject, id: 'the-lobby', title: 'The Lobby', description: 'A shared chat room with screen names and two resident bots.', status: 'published' },
     ],
   };
 }

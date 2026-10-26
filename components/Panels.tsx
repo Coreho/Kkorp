@@ -121,7 +121,7 @@ export function AboutBody({
 }
 
 export function BlogBody() {
-  const { content: { pages, posts }, error } = useContent();
+  const { content: { pages, posts }, error, ready } = useContent();
   const published = [...posts].sort((a, b) => b.date.localeCompare(a.date));
   const dateLabel = (date: string) => new Date(`${date}T12:00:00Z`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   return (
@@ -155,7 +155,7 @@ export function BlogBody() {
             ))}
           </ul>
           <p className="admin-note">
-            {error ? 'Entries could not be loaded. Refresh the page to try again.' : published.length ? 'Choose an entry to read it.' : 'The journal is waiting for its first entry.'}
+            {!ready ? 'Loading entries…' : error ? 'Entries could not be loaded. Refresh the page to try again.' : published.length ? 'Choose an entry to read it.' : 'The journal is waiting for its first entry.'}
           </p>
         </div>
         <Action label={pages.blogAction ?? 'Read the blog'} />
@@ -170,11 +170,21 @@ function ProjectCard({
   url,
   image,
   imageAlt,
+  mediaDecorative,
 }: Project) {
   const faces = (
     <span className="project-flip-inner">
       <span className="project-face project-front">
-        <img className="project-logo" src={image || fallbackLogo.src} alt={imageAlt || `${title} logo`} loading="lazy" />
+        <img
+          className="project-logo"
+          src={image || fallbackLogo.src}
+          alt={mediaDecorative ? '' : imageAlt || `${title} logo`}
+          loading="lazy"
+          // Uploads come from the content service; if it is down, show the site logo, not a broken image.
+          onError={(event) => {
+            if (!event.currentTarget.src.endsWith(fallbackLogo.src)) event.currentTarget.src = fallbackLogo.src;
+          }}
+        />
       </span>
       <span className="project-face project-back" aria-hidden="true">
         <span>{description}</span>
@@ -197,7 +207,7 @@ function ProjectCard({
 }
 
 export function ProjectsBody() {
-  const { content: { pages, projects } } = useContent();
+  const { content: { pages, projects }, ready } = useContent();
   return (
     <>
       <Bg />
@@ -209,19 +219,13 @@ export function ProjectsBody() {
         </h2>
         <div className="rest stack">
           <p className="blurb">{pages.projectsIntro}</p>
-          <div className="tags">
-            <span>Next.js</span>
-            <span>Supabase</span>
-            <span>Realtime chat</span>
-            <span>AI bots</span>
-          </div>
         </div>
         <div className="detail">
-          <div className="proj">
-            {projects.map((project) => (
-              <ProjectCard key={project.id} {...project} />
-            ))}
-            {!projects.length && <p>New projects are on the way.</p>}
+          {/* Until the published list arrives, say so rather than flash the bundled sample projects. */}
+          <div className="proj" aria-busy={!ready}>
+            {!ready ? <p className="admin-note">Loading projects…</p>
+              : projects.length ? projects.map((project) => <ProjectCard key={project.id} {...project} />)
+                : <p>New projects are on the way.</p>}
           </div>
         </div>
         <Action label={pages.projectsAction ?? 'See projects'} />

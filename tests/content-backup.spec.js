@@ -61,6 +61,19 @@ test('a snapshot that references a missing upload is refused, not saved', async 
   expect(await readdir(join(backups, 'daily'))).toEqual([]);
 });
 
+test('a project video is checked like an image', async () => {
+  const stored = JSON.parse(await readFile(join(content, 'content.json'), 'utf8'));
+  stored.projects[0].video = '/uploads/b2.mp4';
+  await writeFile(join(content, 'content.json'), JSON.stringify(stored));
+  const missing = backup();
+  expect(missing.status).toBe(1);
+  expect(missing.stdout + missing.stderr).toContain('/uploads/b2.mp4');
+  await writeFile(join(content, 'uploads', 'b2.mp4'), 'video');
+  const saved = backup([], { BACKUP_STAMP: '20261026T031700Z' });
+  expect(saved.status, saved.stdout + saved.stderr).toBe(0);
+  expect(saved.stdout).toContain('(2 uploads');
+});
+
 test('the check fails when there is no backup or the newest one is stale', async () => {
   expect(backup(['--check']).status).toBe(1);
   expect(backup([], { BACKUP_STAMP: '20261025T031700Z' }).status).toBe(0);

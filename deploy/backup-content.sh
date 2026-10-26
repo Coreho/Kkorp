@@ -53,7 +53,9 @@ verify() {
     const missing = [];
     for (const kind of ["posts", "projects"]) {
       for (const entry of content[kind] || []) {
-        if (entry.image && !existsSync(join(dir, entry.image))) missing.push(entry.image);
+        for (const file of [entry.image, entry.video]) {
+          if (file && !existsSync(join(dir, file))) missing.push(file);
+        }
       }
     }
     if (missing.length) {

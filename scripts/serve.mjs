@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { mkdir, readFile, realpath, stat, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, realpath, stat, unlink, writeFile } from 'node:fs/promises';
 import { extname, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomBytes, randomUUID } from 'node:crypto';
@@ -27,7 +27,9 @@ const cookieName = production ? '__Host-kk_admin' : 'kk_admin';
 const sessions = new Map();
 const attempts = new Map();
 const sessionLifetime = 8 * 60 * 60 * 1000;
-const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif', '.svg': 'image/svg+xml' };
+const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif', '.svg': 'image/svg+xml', '.mp4': 'video/mp4', '.webm': 'video/webm' };
+const imageLimit = 5 * 1024 * 1024;
+const videoLimit = 15 * 1024 * 1024;
 const cleanup = setInterval(() => {
   for (const [key, value] of sessions) if (value < Date.now()) sessions.delete(key);
   for (const [key, value] of attempts) if (value.until < Date.now()) attempts.delete(key);
@@ -113,7 +115,7 @@ async function body(request, limit = 2 * 1024 * 1024) {
   const chunks = [];
   for await (const chunk of request) {
     size += chunk.length;
-    if (size > limit) throw fail(413, 'This upload is too large. Use an image under 5 MB.');
+    if (size > limit) throw fail(413, 'This upload is too large. Use an image under 5 MB or a video under 15 MB.');
     chunks.push(chunk);
   }
   try { return JSON.parse(Buffer.concat(chunks).toString()); }
@@ -126,20 +128,40 @@ function session(request) {
 function setCookie(response, token, age) {
   response.setHeader('Set-Cookie', `${cookieName}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${age}${production ? '; Secure' : ''}`);
 }
+// The file type comes from the bytes, never from the name or the browser's claim.
+function uploadType(data) {
+  if (data.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) return 'png';
+  if (data[0] === 255 && data[1] === 216 && data[2] === 255) return 'jpg';
+  if (['GIF87a', 'GIF89a'].includes(data.subarray(0, 6).toString())) return 'gif';
+  if (data.subarray(0, 4).toString() === 'RIFF' && data.subarray(8, 12).toString() === 'WEBP') return 'webp';
+  // MP4 brands only: the same box layout also carries HEIC, AVIF and QuickTime files.
+  if (data.subarray(4, 8).toString() === 'ftyp' && /^(isom|iso[2-9]|mp4[12]|avc1|M4V |dash)$/.test(data.subarray(8, 12).toString('latin1'))) return 'mp4';
+  if (data.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]))) return 'webm';
+  return null;
+}
 async function upload(input) {
-  if (typeof input.data !== 'string' || !/^[A-Za-z0-9+/]*={0,2}$/.test(input.data)) throw fail(400, 'Choose a PNG, JPEG, WebP, or GIF image.');
+  if (typeof input.data !== 'string' || !/^[A-Za-z0-9+/]*={0,2}$/.test(input.data)) throw fail(400, 'Choose a PNG, JPEG, WebP, or GIF image, or an MP4 or WebM video.');
   const data = Buffer.from(input.data, 'base64');
-  if (!data.length || data.length > 5 * 1024 * 1024) throw fail(413, 'Use an image under 5 MB.');
-  let extension;
-  if (data.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) extension = 'png';
-  else if (data[0] === 255 && data[1] === 216 && data[2] === 255) extension = 'jpg';
-  else if (['GIF87a', 'GIF89a'].includes(data.subarray(0, 6).toString())) extension = 'gif';
-  else if (data.subarray(0, 4).toString() === 'RIFF' && data.subarray(8, 12).toString() === 'WEBP') extension = 'webp';
-  else throw fail(400, 'Choose a PNG, JPEG, WebP, or GIF image. SVG and other files are not supported.');
+  const extension = uploadType(data);
+  if (!data.length || !extension) throw fail(400, 'Choose a PNG, JPEG, WebP, or GIF image, or an MP4 or WebM video. SVG and other files are not supported.');
+  const video = ['mp4', 'webm'].includes(extension);
+  if (data.length > (video ? videoLimit : imageLimit)) throw fail(413, video ? 'Use a video under 15 MB.' : 'Use an image under 5 MB.');
   const name = `${randomUUID()}.${extension}`;
   await mkdir(resolve(contentDirectory, 'uploads'), { recursive: true, mode: 0o700 });
   await writeFile(resolve(contentDirectory, 'uploads', name), data, { mode: 0o600 });
   return { url: `/uploads/${name}` };
+}
+// Earlier uploads, newest first, so an entry can reuse one instead of uploading it again.
+async function listUploads() {
+  let names;
+  try { names = await readdir(resolve(contentDirectory, 'uploads')); }
+  catch (error) { if (error.code === 'ENOENT') return { uploads: [] }; throw error; }
+  const uploads = [];
+  for (const name of names.filter((value) => /^[a-f0-9-]+\.(png|jpg|gif|webp|mp4|webm)$/.test(value))) {
+    const info = await stat(resolve(contentDirectory, 'uploads', name));
+    uploads.push({ url: `/uploads/${name}`, kind: /\.(mp4|webm)$/.test(name) ? 'video' : 'image', size: info.size, modified: info.mtime.toISOString() });
+  }
+  return { uploads: uploads.sort((a, b) => b.modified.localeCompare(a.modified)) };
 }
 
 const server = createServer(async (request, response) => {
@@ -200,7 +222,9 @@ const server = createServer(async (request, response) => {
       }
       if (path === '/api/admin/content' && request.method === 'GET') return json(response, 200, await loadContent());
       if (path === '/api/admin/content' && request.method === 'PUT') return json(response, 200, await saveContent(await body(request), request.headers['if-match']));
-      if (path === '/api/admin/uploads' && request.method === 'POST') return json(response, 201, await upload(await body(request, 7 * 1024 * 1024)));
+      if (path === '/api/admin/uploads' && request.method === 'GET') return json(response, 200, await listUploads());
+      // Base64 adds a third, so the body limit allows a full-size video.
+      if (path === '/api/admin/uploads' && request.method === 'POST') return json(response, 201, await upload(await body(request, Math.ceil(videoLimit * 4 / 3) + 1024)));
       throw fail(404, 'Not found.');
     }
     if (path === '/api/content' && request.method === 'GET') {
@@ -210,7 +234,7 @@ const server = createServer(async (request, response) => {
     if (!['GET', 'HEAD'].includes(request.method)) throw fail(405, 'Method not allowed.');
     let filePath;
     let allowedRoot;
-    if (path.startsWith('/uploads/') && /^\/uploads\/[a-f0-9-]+\.(png|jpg|gif|webp)$/.test(path)) {
+    if (path.startsWith('/uploads/') && /^\/uploads\/[a-f0-9-]+\.(png|jpg|gif|webp|mp4|webm)$/.test(path)) {
       allowedRoot = resolve(contentDirectory, 'uploads');
       filePath = resolve(allowedRoot, path.slice('/uploads/'.length));
     } else if (path.startsWith('/assets/')) {
@@ -228,7 +252,20 @@ const server = createServer(async (request, response) => {
     if (fromRoot.startsWith('..') || isAbsolute(fromRoot)) throw fail(404, 'Not found.');
     if (!(await stat(canonical)).isFile()) throw fail(404, 'Not found.');
     const bytes = await readFile(canonical);
-    response.writeHead(200, { 'Content-Type': mime[extname(canonical)] || 'application/octet-stream', 'Content-Length': bytes.length });
+    const type = mime[extname(canonical)] || 'application/octet-stream';
+    // Safari plays video only from servers that answer byte-range requests.
+    const range = /^bytes=(\d*)-(\d*)$/.exec(request.headers.range || '');
+    if (range && allowedRoot !== siteRoot && (range[1] || range[2])) {
+      const start = range[1] ? Number(range[1]) : Math.max(0, bytes.length - Number(range[2]));
+      const end = range[1] && range[2] ? Math.min(Number(range[2]), bytes.length - 1) : bytes.length - 1;
+      if (start >= bytes.length || start > end) {
+        response.writeHead(416, { 'Content-Range': `bytes */${bytes.length}` });
+        return response.end();
+      }
+      response.writeHead(206, { 'Content-Type': type, 'Content-Length': end - start + 1, 'Content-Range': `bytes ${start}-${end}/${bytes.length}`, 'Accept-Ranges': 'bytes' });
+      return response.end(request.method === 'HEAD' ? undefined : bytes.subarray(start, end + 1));
+    }
+    response.writeHead(200, { 'Content-Type': type, 'Content-Length': bytes.length, ...(allowedRoot === siteRoot ? {} : { 'Accept-Ranges': 'bytes' }) });
     response.end(request.method === 'HEAD' ? undefined : bytes);
   } catch (error) {
     const status = error.status || (['ENOENT', 'ENOTDIR'].includes(error.code) ? 404 : 500);
@@ -236,7 +273,8 @@ const server = createServer(async (request, response) => {
     json(response, status, { error: error.status ? error.message : status === 404 ? 'Not found.' : 'Could not complete the request. Try again.' });
   }
 });
-server.requestTimeout = 30000;
+// Long enough for a 15 MB video over a slow home upload.
+server.requestTimeout = 120000;
 server.headersTimeout = 15000;
 server.listen(port, host, () => {
   scheduleHealthCheck();

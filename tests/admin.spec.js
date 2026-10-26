@@ -190,7 +190,7 @@ test.describe('content administration', () => {
       buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aZ3sAAAAASUVORK5CYII=', 'base64'),
     });
     await expect(page.getByRole('status')).toContainText('Image uploaded');
-    await page.getByLabel('Image description').fill('Radio cover art');
+    await page.getByLabel('Media description').fill('Radio cover art');
     await page.getByRole('button', { name: 'Save draft', exact: true }).click();
     await expect(page.getByRole('status')).toContainText('Draft saved');
     let publicContent = await (await page.request.get('/api/content')).json();
@@ -217,6 +217,90 @@ test.describe('content administration', () => {
     await page.getByRole('button', { name: 'Delete entry' }).click();
     await expect(page.getByRole('status')).toContainText('Entry deleted');
     expect((await (await page.request.get('/api/content')).json()).projects.some((item) => item.id === project.id)).toBe(false);
+  });
+
+  test('orders projects and keeps their technologies, stage, links and media', async ({ page }) => {
+    const headers = { Origin: 'http://127.0.0.1:4182', 'X-KK-Admin': '1' };
+    const published = async () => (await (await page.request.get('/api/content')).json()).projects;
+    const titles = async () => (await published()).map((project) => project.title);
+    const technologies = page.getByLabel('Technologies (optional)');
+    // The smallest file the server accepts as MP4: an ftyp box with an MP4 brand.
+    const clip = Buffer.concat([Buffer.from([0, 0, 0, 24]), Buffer.from('ftypisom'), Buffer.alloc(16)]);
+    await signIn(page);
+    await page.getByRole('button', { name: /^Projects/ }).click();
+    for (const title of ['Signal map', 'Pixel board']) {
+      await page.getByRole('button', { name: 'Add project', exact: true }).click();
+      await page.getByLabel('Title', { exact: true }).fill(title);
+      await page.getByLabel('Project description').fill(`${title}, a small experiment.`);
+      await page.getByRole('button', { name: 'Publish entry', exact: true }).click();
+      await expect(page.getByRole('status')).toContainText('Entry published');
+    }
+    // New projects go first.
+    expect((await titles()).slice(0, 2)).toEqual(['Pixel board', 'Signal map']);
+
+    await technologies.fill('Canvas, WebGL, canvas');
+    expect(await technologies.evaluate((input) => input.validationMessage)).toBe('canvas is listed twice.');
+    await technologies.fill('Canvas, WebGL');
+    await page.getByLabel('Stage').selectOption('live');
+    await page.getByLabel('Source code link (optional)').fill('https://example.com/pixel-source');
+    await page.getByLabel('Preview video (optional)').setInputFiles({ name: 'clip.mp4', mimeType: 'video/mp4', buffer: clip });
+    await expect(page.getByRole('status')).toContainText('Video uploaded');
+    await expect(page.locator('video.image-preview')).toHaveAttribute('src', /^\/uploads\/.+\.mp4$/);
+    // Media needs a description, or the decorative mark.
+    await page.getByRole('button', { name: 'Save published entry' }).click();
+    expect(await page.getByLabel('Media description').evaluate((input) => input.validity.valid)).toBe(false);
+    await page.getByLabel(/^Decorative/).check();
+    await page.getByRole('button', { name: 'Save published entry' }).click();
+    await expect(page.getByRole('status')).toContainText('Entry published');
+    const pixel = (await published()).find((project) => project.title === 'Pixel board');
+    expect(pixel).toMatchObject({ technologies: ['Canvas', 'WebGL'], stage: 'live', sourceUrl: 'https://example.com/pixel-source', mediaDecorative: true, imageAlt: '' });
+    const video = await page.request.get(pixel.video);
+    expect(video.headers()['content-type']).toBe('video/mp4');
+    expect(video.headers()['accept-ranges']).toBe('bytes');
+    const part = await page.request.get(pixel.video, { headers: { Range: 'bytes=4-7' } });
+    expect(part.status()).toBe(206);
+    expect(part.headers()['content-range']).toBe(`bytes 4-7/${clip.length}`);
+    expect((await part.body()).toString()).toBe('ftyp');
+
+    // The order is the website's order; moving waits for unsaved changes.
+    await expect(page.getByText('Position 1 of')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Move earlier' })).toBeDisabled();
+    await page.getByLabel('Title', { exact: true }).fill('Pixel board, unsaved');
+    await page.getByRole('button', { name: 'Move later' }).click();
+    await expect(page.getByRole('status')).toContainText('Save or discard your changes');
+    expect((await titles()).slice(0, 2)).toEqual(['Pixel board', 'Signal map']);
+    await page.getByLabel('Title', { exact: true }).fill('Pixel board');
+    await page.getByRole('button', { name: 'Save published entry' }).click();
+    await expect(page.getByRole('status')).toContainText('Entry published');
+    await page.getByRole('button', { name: 'Move later' }).click();
+    await expect(page.getByRole('status')).toContainText('Order saved');
+    expect((await titles()).slice(0, 2)).toEqual(['Signal map', 'Pixel board']);
+    await expect(page.getByText('Position 2 of')).toBeVisible();
+
+    // Another project reuses the uploaded video instead of uploading it again.
+    await page.getByRole('button', { name: /^Signal map/ }).click();
+    await page.getByText('Use an earlier video').click();
+    await page.getByRole('button', { name: /^Use the video uploaded/ }).first().click();
+    await expect(page.locator('video.image-preview')).toHaveAttribute('src', pixel.video);
+    await page.getByLabel('Media description').fill('A map drawing itself');
+    await page.getByRole('button', { name: 'Save published entry' }).click();
+    await expect(page.getByRole('status')).toContainText('Entry published');
+    expect((await published()).find((project) => project.title === 'Signal map')).toMatchObject({ video: pixel.video, imageAlt: 'A map drawing itself', mediaDecorative: false });
+
+    // The server applies the same rules to anything that skips the editor.
+    const snapshot = await (await page.request.get('/api/admin/content')).json();
+    const put = (data) => page.request.put('/api/admin/content', { headers: { ...headers, 'If-Match': String(snapshot.revision) }, data });
+    for (const change of [{ technologies: ['A', 'a'] }, { stage: 'finished' }, { sourceUrl: 'javascript:alert(1)' }, { video: '/uploads/clip.mov' }, { mediaDecorative: false, imageAlt: '' }]) {
+      const bad = structuredClone(snapshot);
+      Object.assign(bad.projects.find((project) => project.title === 'Pixel board'), change);
+      expect((await put(bad)).status(), JSON.stringify(change)).toBe(400);
+    }
+    for (const data of [Buffer.from('not a video at all'), Buffer.concat([Buffer.from([0, 0, 0, 24]), Buffer.from('ftypheic'), Buffer.alloc(16)])]) {
+      expect((await page.request.post('/api/admin/uploads', { headers, data: { data: data.toString('base64') } })).status()).toBe(400);
+    }
+    const cleaned = structuredClone(snapshot);
+    cleaned.projects = cleaned.projects.filter((project) => !['Signal map', 'Pixel board'].includes(project.title));
+    expect((await put(cleaned)).status()).toBe(200);
   });
 
   test('publishes a readable blog entry and can unpublish it', async ({ page }) => {
