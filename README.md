@@ -53,6 +53,14 @@ own chunks at 15 KiB. Entry pages read the same `/api/content` as the carousel i
 browser, so a missing entry shows its not-found page with status 200 and
 `noindex`; only malformed addresses return a real 404.
 
+**Projects.** The editor keeps projects in the order the website shows them,
+with technologies, a stage, project and source links, an image, and a short
+muted preview video (MP4 or WebM, up to 15 MB). The Projects panel shows a
+loading line until the published list arrives, rather than flashing the bundled
+sample projects. An upload that fails to load falls back to the site logo.
+Cards still show only the logo and description; showing technologies, stage
+and video on them is TASK-013.
+
 **Control service image.** Production runs the same server as the
 `koreokorp-control` container:
 

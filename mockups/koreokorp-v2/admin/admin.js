@@ -1,4 +1,4 @@
-import { pageFields, slugify, slugPattern } from '../content-model.js';
+import { emptyProject, pageFields, projectStages, slugify, slugPattern } from '../content-model.js';
 import { parseMarkdown } from '../markdown.js';
 
 const $ = (selector) => document.querySelector(selector);
@@ -7,7 +7,6 @@ let section = 'pages';
 let selected = null;
 let dirty = false;
 let busy = false;
-let currentImage = '';
 const login = $('#login');
 const workspace = $('#workspace');
 const editor = $('#editor');
@@ -237,6 +236,146 @@ function addressField(form, item, title) {
   });
   check();
 }
+function splitTechnologies(text) {
+  return text.split(',').map((name) => name.trim()).filter(Boolean);
+}
+function technologiesField(form, names) {
+  const input = field(form, 'technologies', 'Technologies (optional)', names.join(', '), 'text', false, 600);
+  form.append(node('p', 'Separate with commas, such as Next.js, Canvas. Up to 12.', 'helper'));
+  // The same rules as the server, reported on the field before anything is sent.
+  input.addEventListener('input', () => {
+    const list = splitTechnologies(input.value);
+    const seen = new Set();
+    const repeated = list.find((name) => {
+      const key = name.toLowerCase();
+      if (seen.has(key)) return true;
+      seen.add(key);
+      return false;
+    });
+    input.setCustomValidity(list.length > 12 ? 'List at most 12 technologies.'
+      : list.some((name) => name.length > 40) ? 'Keep each technology under 40 characters.'
+        : repeated ? `${repeated} is listed twice.` : '');
+  });
+}
+function stageField(form, stage) {
+  const wrapper = node('div', undefined, 'field');
+  const select = node('select');
+  select.id = 'field-stage';
+  select.name = 'stage';
+  for (const [value, label] of [['', 'Not shown'], ...Object.entries(projectStages)]) {
+    const option = node('option', label);
+    option.value = value;
+    option.selected = value === stage;
+    select.append(option);
+  }
+  const caption = node('label', 'Stage');
+  caption.htmlFor = select.id;
+  wrapper.append(caption, select);
+  form.append(wrapper);
+}
+function readAsBase64(file) {
+  return new Promise((done, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => done(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+// One image or video for an entry: upload a file, or reuse one uploaded earlier.
+function mediaSlot(form, kind, label, value) {
+  const video = kind === 'video';
+  const limit = video ? 15 : 5;
+  const slot = { value, preview: node(video ? 'video' : 'img', undefined, 'image-preview') };
+  const input = field(form, `${kind}-file`, label, '', 'file');
+  input.accept = video ? 'video/mp4,video/webm' : 'image/png,image/jpeg,image/webp,image/gif';
+  form.append(node('p', video ? `MP4 or WebM, up to ${limit} MB. It plays muted, so keep it short.` : `PNG, JPEG, WebP, or GIF. Maximum ${limit} MB.`, 'helper'));
+  if (video) Object.assign(slot.preview, { muted: true, controls: true, playsInline: true, preload: 'metadata' });
+  else slot.preview.alt = 'Selected image';
+  const remove = button(video ? 'Remove video' : 'Remove image', () => use(''), 'remove-image');
+  const picker = node('details', undefined, 'media-picker');
+  const choices = node('div', undefined, 'picker-grid');
+  picker.append(node('summary', video ? 'Use an earlier video' : 'Use an earlier image'), choices);
+  form.append(slot.preview, remove, picker);
+  function use(url, changed = true) {
+    slot.value = url;
+    slot.preview.hidden = !url;
+    remove.hidden = !url;
+    if (url) slot.preview.src = url;
+    else slot.preview.removeAttribute('src');
+    if (changed) dirty = true;
+  }
+  use(value, false);
+  picker.addEventListener('toggle', async () => {
+    if (!picker.open) return;
+    choices.replaceChildren(node('p', 'Loading uploads…', 'helper'));
+    try {
+      const uploads = (await api('uploads')).uploads.filter((upload) => upload.kind === kind);
+      if (!uploads.length) {
+        choices.replaceChildren(node('p', `No earlier ${kind}s yet.`, 'helper'));
+        return;
+      }
+      choices.replaceChildren(...uploads.map((upload) => {
+        const date = new Date(upload.modified).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        const choice = button('', () => {
+          use(upload.url);
+          picker.open = false;
+          message(`Earlier ${kind} chosen. Save your entry to keep it.`);
+        }, 'picker-choice');
+        choice.setAttribute('aria-label', `Use the ${kind} uploaded ${date}, ${Math.max(1, Math.round(upload.size / 1024))} KB`);
+        const thumb = node(video ? 'video' : 'img');
+        thumb.src = upload.url;
+        if (video) thumb.muted = true;
+        else thumb.alt = '';
+        choice.append(thumb, node('span', date));
+        return choice;
+      }));
+    } catch (error) { choices.replaceChildren(node('p', error.message, 'helper error')); }
+  });
+  input.addEventListener('change', async () => {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > limit * 1024 * 1024) {
+      message(`Use ${video ? 'a video' : 'an image'} under ${limit} MB.`, true);
+      input.value = '';
+      return;
+    }
+    busy = true;
+    form.querySelectorAll('button').forEach((element) => { element.disabled = true; });
+    message(video ? 'Uploading video…' : 'Uploading image…');
+    try {
+      use((await api('uploads', 'POST', { data: await readAsBase64(file) })).url);
+      message(`${video ? 'Video' : 'Image'} uploaded. Describe it, or mark it decorative, then save your entry.`);
+    } catch (error) { message(error.message, true); }
+    finally {
+      busy = false;
+      input.value = '';
+      form.querySelectorAll('button').forEach((element) => { element.disabled = false; });
+    }
+  });
+  return slot;
+}
+// Projects appear on the website in this order.
+function orderRow(item) {
+  const index = content.projects.findIndex((project) => project.id === item.id);
+  const row = node('div', undefined, 'order-row');
+  const move = (offset) => {
+    if (busy) return;
+    if (dirty) {
+      message('Save or discard your changes before moving the project.', true);
+      return;
+    }
+    const next = structuredClone(content);
+    const [moved] = next.projects.splice(index, 1);
+    next.projects.splice(index + offset, 0, moved);
+    save(next, 'Order saved. The website shows projects in this order.');
+  };
+  const earlier = button('Move earlier', () => move(-1));
+  const later = button('Move later', () => move(1));
+  earlier.disabled = index === 0;
+  later.disabled = index === content.projects.length - 1;
+  row.append(node('span', `Position ${index + 1} of ${content.projects.length} on the website`, 'helper'), earlier, later);
+  return row;
+}
 function renderEntry() {
   const item = content[section].find((entry) => entry.id === selected);
   if (!item && selected !== 'new') {
@@ -246,8 +385,7 @@ function renderEntry() {
     return;
   }
   const post = section === 'posts';
-  const entry = item || { title: '', description: '', excerpt: '', body: '', date: new Date().toISOString().slice(0, 10), url: '', image: '', imageAlt: '', status: 'draft' };
-  currentImage = entry.image;
+  const entry = item ? { ...(post ? {} : emptyProject), ...item } : post ? { title: '', excerpt: '', body: '', date: new Date().toISOString().slice(0, 10), image: '', imageAlt: '', status: 'draft' } : { ...emptyProject };
   const form = node('form');
   const heading = node('div', undefined, 'entry-heading');
   heading.append(node('h2', item ? 'Edit entry' : post ? 'New blog entry' : 'New project'), node('span', entry.status === 'published' ? 'Published' : 'Draft', 'entry-status'));
@@ -262,51 +400,26 @@ function renderEntry() {
     form.append(node('p', 'Blank lines separate paragraphs. Markdown works for headings, **bold**, *italic*, links, lists, quotes, and code. The date labels your entry; publishing makes it live immediately.', 'helper'));
   } else {
     field(form, 'description', 'Project description', entry.description, 'textarea', true, 10000);
+    technologiesField(form, entry.technologies);
+    stageField(form, entry.stage);
     field(form, 'url', 'Project link (optional)', entry.url, 'url', false, 2000);
+    field(form, 'sourceUrl', 'Source code link (optional)', entry.sourceUrl, 'url', false, 2000);
   }
-  const imageField = field(form, 'image-file', post ? 'Cover image (optional)' : 'Project image (optional)', '', 'file');
-  imageField.accept = 'image/png,image/jpeg,image/webp,image/gif';
-  form.append(node('p', 'PNG, JPEG, WebP, or GIF. Maximum 5 MB.', 'helper'));
-  const preview = node('img', undefined, 'image-preview');
-  preview.alt = entry.imageAlt || 'Selected image';
-  preview.hidden = !entry.image;
-  if (entry.image) preview.src = entry.image;
-  form.append(preview);
-  const removeImage = button('Remove image', () => {
-    currentImage = '';
-    preview.hidden = true;
-    removeImage.hidden = true;
-    imageField.value = '';
-    dirty = true;
-  }, 'remove-image');
-  removeImage.hidden = !entry.image;
-  form.append(removeImage);
-  const alt = field(form, 'imageAlt', 'Image description', entry.imageAlt, 'text', false, 300);
-  alt.addEventListener('input', () => { preview.alt = alt.value; });
-  imageField.addEventListener('change', async () => {
-    const file = imageField.files[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { message('Use an image under 5 MB.', true); imageField.value = ''; return; }
-    busy = true;
-    form.querySelectorAll('button').forEach((element) => { element.disabled = true; });
-    message('Uploading image…');
-    try {
-      const encoded = await new Promise((done, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => done(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      const result = await api('uploads', 'POST', { data: encoded });
-      currentImage = result.url;
-      preview.src = currentImage;
-      preview.hidden = false;
-      removeImage.hidden = false;
-      dirty = true;
-      message('Image uploaded. Add an image description, then save your entry.');
-    } catch (error) { message(error.message, true); }
-    finally { busy = false; imageField.value = ''; form.querySelectorAll('button').forEach((element) => { element.disabled = false; }); }
-  });
+  const image = mediaSlot(form, 'image', post ? 'Cover image (optional)' : 'Project image (optional)', entry.image);
+  const video = post ? null : mediaSlot(form, 'video', 'Preview video (optional)', entry.video);
+  const alt = field(form, 'imageAlt', post ? 'Image description' : 'Media description', entry.imageAlt, 'text', false, 300);
+  alt.addEventListener('input', () => { image.preview.alt = alt.value; });
+  let decorative;
+  if (!post) {
+    form.append(node('p', 'Describes the image and video for people using screen readers.', 'helper'));
+    const row = node('label', undefined, 'check');
+    decorative = node('input');
+    decorative.type = 'checkbox';
+    decorative.name = 'mediaDecorative';
+    decorative.checked = entry.mediaDecorative;
+    row.append(decorative, node('span', 'Decorative: the media adds nothing the title and description do not already say'));
+    form.append(row);
+  }
   const details = node('details', undefined, 'entry-preview');
   const previewContent = node('div', undefined, post ? 'preview-article' : 'preview-content');
   details.append(node('summary', 'Preview'), previewContent);
@@ -314,7 +427,12 @@ function renderEntry() {
     if (!details.open) return;
     const values = form.elements;
     if (!post) {
-      previewContent.replaceChildren(node('h2', values.title.value), node('p', values.description.value));
+      const parts = [node('h2', values.title.value)];
+      if (projectStages[values.stage.value]) parts.push(node('p', projectStages[values.stage.value], 'preview-date'));
+      parts.push(node('p', values.description.value));
+      const names = splitTechnologies(values.technologies.value);
+      if (names.length) parts.push(node('p', names.join(' · '), 'preview-date'));
+      previewContent.replaceChildren(...parts);
       return;
     }
     const parts = [node('h2', values.title.value || 'Untitled entry', 'preview-title')];
@@ -333,6 +451,7 @@ function renderEntry() {
   publish.type = 'submit';
   publish.name = 'publish';
   actions.append(draft, publish);
+  if (item && !post) form.append(orderRow(item));
   if (item) actions.append(button('Delete entry', () => {
     if (busy || !confirm(`Delete “${item.title}”? This removes it from the website too.`)) return;
     const next = structuredClone(content);
@@ -343,13 +462,19 @@ function renderEntry() {
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     if (busy) return;
-    if (currentImage && !alt.value.trim()) { alt.required = true; alt.reportValidity(); return; }
+    if ((image.value || video?.value) && !alt.value.trim() && !decorative?.checked) {
+      alt.required = true;
+      alt.reportValidity();
+      return;
+    }
     const status = event.submitter?.name === 'publish' ? 'published' : 'draft';
     const next = structuredClone(content);
     const id = item?.id || crypto.randomUUID();
     const values = Object.fromEntries(new FormData(form));
     delete values['image-file'];
-    const value = { ...values, id, status, image: currentImage };
+    delete values['video-file'];
+    const value = { ...values, id, status, image: image.value };
+    if (!post) Object.assign(value, { technologies: splitTechnologies(values.technologies), video: video.value, mediaDecorative: decorative.checked });
     const index = next[section].findIndex((value) => value.id === id);
     if (index < 0) next[section].unshift(value);
     else next[section][index] = value;

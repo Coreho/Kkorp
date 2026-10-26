@@ -1,10 +1,11 @@
 ---
 id: TASK-012
 title: Manage the project collection
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-04 03:14'
-updated_date: '2026-10-25 05:56'
+updated_date: '2026-10-26 01:58'
 labels:
   - admin
   - cms
@@ -40,6 +41,17 @@ The Projects panel contains placeholder cards and cannot be updated without edit
 - [ ] #2 Relevant checks pass; new interactions have regression coverage, and npm test plus git diff --check pass before committing.
 - [ ] #3 Documentation is updated where behavior or workflow changes, and remaining limitations are recorded.
 <!-- DOD:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Model: technologies (up to 12), stage (In progress, Live, Paused, Archived or none), source link, video, and a decorative flag beside the existing fields; older content reads with defaults (emptyProject in content-model.js), field names chosen to carry over to the Supabase projects table.
+2. Server: validate every new field; accept MP4 (MP4 brands only) and WebM up to 15 MB by their bytes; serve uploads with byte ranges for Safari; list earlier uploads for reuse.
+3. Editor: new fields, a media slot for image and video with upload, preview, remove and 'use an earlier upload', one media description or a decorative mark, and Move earlier / Move later that saves the order and waits for unsaved changes.
+4. Public panel: owner order (array order), a loading line instead of flashing the bundled sample projects, empty alt for decorative media, the site logo when an upload fails.
+5. Backups: the integrity check follows video references too.
+6. Tests: editor flow, server rules and range requests in tests/admin.spec.js; loading, order, decorative alt and logo fallback in tests/app/content.spec.js; video reference in tests/content-backup.spec.js. Docs: admin-panel.md, README.
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 

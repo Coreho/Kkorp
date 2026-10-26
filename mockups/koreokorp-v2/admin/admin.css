@@ -17,7 +17,7 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 body { margin: 0; background: var(--night); color: var(--ink); font: 15px/1.6 var(--font); }
-button, input, textarea { font: inherit; }
+button, input, textarea, select { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 button { cursor: pointer; }
 button:disabled { opacity: .55; cursor: wait; }
@@ -47,7 +47,7 @@ p { color: var(--muted); }
 .login form { display: grid; gap: 12px; }
 .login .primary { margin-top: 12px; display: flex; justify-content: space-between; align-items: center; }
 label, .field-label { display: block; font-size: 14px; color: var(--ink-2); margin-bottom: 8px; font-weight: 500; }
-input, textarea { display: block; width: 100%; min-width: 0; border: 1px solid var(--rule); border-radius: 8px; background: var(--field); color: var(--ink); caret-color: var(--cyan); padding: 12px 14px; }
+input, textarea, select { display: block; width: 100%; min-width: 0; border: 1px solid var(--rule); border-radius: 8px; background: var(--field); color: var(--ink); caret-color: var(--cyan); padding: 12px 14px; }
 input::placeholder, textarea::placeholder { color: var(--muted); }
 textarea { resize: vertical; min-height: 108px; line-height: 1.7; }
 .password-row { display: flex; gap: 8px; }
@@ -94,6 +94,16 @@ main { margin-left: 240px; padding: 48px 5vw 24px; max-width: 1600px; }
 .entry-status { color: var(--cyan); font-size: 12px; }
 .image-preview { width: min(100%, 280px); max-height: 180px; object-fit: contain; display: block; margin-top: 16px; border-radius: 8px; }
 .remove-image { margin-top: 12px; }
+video.image-preview { max-height: 220px; background: var(--field); }
+input[type="checkbox"] { display: inline-block; width: 20px; height: 20px; padding: 0; margin: 0; accent-color: var(--primary); flex: none; }
+.check { display: flex; gap: 12px; align-items: center; min-height: 44px; margin: 4px 0 24px; color: var(--ink-2); font-weight: 400; }
+.media-picker { margin: 12px 0 24px; }
+.media-picker summary { cursor: pointer; color: var(--ink-2); font-size: 14px; min-height: 44px; padding: 10px 0; }
+.picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 12px; }
+.picker-choice { display: grid; gap: 6px; padding: 8px; justify-items: center; font-size: 12px; color: var(--muted); }
+.picker-choice :is(img, video) { width: 100%; height: 72px; object-fit: contain; border-radius: 4px; pointer-events: none; }
+.order-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding-top: 16px; border-top: 1px solid var(--rule); }
+.order-row .helper { margin: 0 auto 0 0; }
 .body-input { min-height: 300px; }
 .entry-preview { padding: 24px 0; border-top: 1px solid var(--rule); }
 .preview-article { max-width: 65ch; color: var(--ink-2); overflow-wrap: anywhere; }
