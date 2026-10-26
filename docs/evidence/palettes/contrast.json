@@ -1,0 +1,114 @@
+{
+  "base": "https://koreokorp.com",
+  "captured": "2026-10-26T03:23:16.539Z",
+  "palettes": {
+    "indigo-night": {
+      "name": "Indigo Night",
+      "tokens": {
+        "text on page": 21,
+        "text on surface": 19.5,
+        "soft text on surface": 13.19,
+        "muted text on surface": 7.61,
+        "white on primary (active section)": 7.46,
+        "white on secondary (pill end)": 5.71,
+        "accent on surface": 13.45,
+        "focus on surface": 9.78,
+        "focus on page": 10.53,
+        "success on surface": 10.93,
+        "warning on surface": 11.68,
+        "danger on surface": 7.05,
+        "About accent on surface": 5.45,
+        "Blog accent on surface": 2.61,
+        "Projects accent on surface": 5.87,
+        "Lobby accent on surface": 13.45
+      },
+      "rendered": {
+        "desktop .long": 10.42,
+        "desktop li": 9.4,
+        "phone .long": 11.29,
+        "phone li": 10.35
+      }
+    },
+    "plum-dusk": {
+      "name": "Plum Dusk",
+      "tokens": {
+        "text on page": 18.93,
+        "text on surface": 17.99,
+        "soft text on surface": 14.25,
+        "muted text on surface": 8.23,
+        "white on primary (active section)": 6.22,
+        "white on secondary (pill end)": 5.17,
+        "accent on surface": 10.94,
+        "focus on surface": 13.37,
+        "focus on page": 14.07,
+        "success on surface": 10.22,
+        "warning on surface": 11.37,
+        "danger on surface": 8.21,
+        "About accent on surface": 8.9,
+        "Blog accent on surface": 4.84,
+        "Projects accent on surface": 8.2,
+        "Lobby accent on surface": 10.94
+      },
+      "rendered": {
+        "desktop .long": 11.6,
+        "desktop li": 9.19,
+        "phone .long": 12.54,
+        "phone li": 10.13
+      }
+    },
+    "terminal-mint": {
+      "name": "Terminal Mint",
+      "tokens": {
+        "text on page": 19.79,
+        "text on surface": 18.6,
+        "soft text on surface": 14.83,
+        "muted text on surface": 8.44,
+        "white on primary (active section)": 5.23,
+        "white on secondary (pill end)": 5.73,
+        "accent on surface": 12.96,
+        "focus on surface": 15.2,
+        "focus on page": 16.18,
+        "success on surface": 11,
+        "warning on surface": 13.29,
+        "danger on surface": 7.12,
+        "About accent on surface": 12.96,
+        "Blog accent on surface": 7.32,
+        "Projects accent on surface": 11.5,
+        "Lobby accent on surface": 12.71
+      },
+      "rendered": {
+        "desktop .long": 12.09,
+        "desktop li": 9.32,
+        "phone .long": 12.97,
+        "phone li": 10.16
+      }
+    },
+    "paper-day": {
+      "name": "Paper Day",
+      "tokens": {
+        "text on page": 15.95,
+        "text on surface": 17.87,
+        "soft text on surface": 12.22,
+        "muted text on surface": 7.04,
+        "white on primary (active section)": 8.54,
+        "white on secondary (pill end)": 7.28,
+        "accent on surface": 5.27,
+        "focus on surface": 8.4,
+        "focus on page": 7.5,
+        "success on surface": 4.93,
+        "warning on surface": 6.97,
+        "danger on surface": 6.36,
+        "About accent on surface": 8.4,
+        "Blog accent on surface": 7.76,
+        "Projects accent on surface": 7.16,
+        "Lobby accent on surface": 5.27
+      },
+      "rendered": {
+        "desktop .long": 6.13,
+        "desktop li": 4.73,
+        "phone .long": 7.38,
+        "phone li": 4.85
+      }
+    }
+  }
+}

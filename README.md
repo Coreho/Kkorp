@@ -135,6 +135,11 @@ measurements in `docs/evidence/site-audit/`. Recapture after design changes
 with `node scripts/site-audit-capture.mjs` (set `AUDIT_BASE` for staging or a
 local build).
 
+[The palette proposals](docs/design/palettes-2026-10.md) render four colour
+schemes on the live site, with their tokens in `docs/design/palettes.json` and
+contrast results in `docs/evidence/palettes/`. Recapture them with
+`node scripts/palette-capture.mjs`.
+
 ## Task management
 
 Backlog.md is pinned as a development dependency and installed by `npm ci`.
