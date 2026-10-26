@@ -282,7 +282,7 @@ function readAsBase64(file) {
   });
 }
 // One image or video for an entry: upload a file, or reuse one uploaded earlier.
-function mediaSlot(form, kind, label, value) {
+function mediaSlot(form, kind, label, value, onChange) {
   const video = kind === 'video';
   const limit = video ? 15 : 5;
   const slot = { value, preview: node(video ? 'video' : 'img', undefined, 'image-preview') };
@@ -302,7 +302,10 @@ function mediaSlot(form, kind, label, value) {
     remove.hidden = !url;
     if (url) slot.preview.src = url;
     else slot.preview.removeAttribute('src');
-    if (changed) dirty = true;
+    if (changed) {
+      dirty = true;
+      onChange();
+    }
   }
   use(value, false);
   picker.addEventListener('toggle', async () => {
@@ -405,10 +408,15 @@ function renderEntry() {
     field(form, 'url', 'Project link (optional)', entry.url, 'url', false, 2000);
     field(form, 'sourceUrl', 'Source code link (optional)', entry.sourceUrl, 'url', false, 2000);
   }
-  const image = mediaSlot(form, 'image', post ? 'Cover image (optional)' : 'Project image (optional)', entry.image);
-  const video = post ? null : mediaSlot(form, 'video', 'Preview video (optional)', entry.video);
+  // A missing description is reported on its field, and cleared by anything that could resolve it.
+  const resolved = () => alt.setCustomValidity('');
+  const image = mediaSlot(form, 'image', post ? 'Cover image (optional)' : 'Project image (optional)', entry.image, resolved);
+  const video = post ? null : mediaSlot(form, 'video', 'Preview video (optional)', entry.video, resolved);
   const alt = field(form, 'imageAlt', post ? 'Image description' : 'Media description', entry.imageAlt, 'text', false, 300);
-  alt.addEventListener('input', () => { image.preview.alt = alt.value; });
+  alt.addEventListener('input', () => {
+    image.preview.alt = alt.value;
+    resolved();
+  });
   let decorative;
   if (!post) {
     form.append(node('p', 'Describes the image and video for people using screen readers.', 'helper'));
@@ -417,6 +425,7 @@ function renderEntry() {
     decorative.type = 'checkbox';
     decorative.name = 'mediaDecorative';
     decorative.checked = entry.mediaDecorative;
+    decorative.addEventListener('change', resolved);
     row.append(decorative, node('span', 'Decorative: the media adds nothing the title and description do not already say'));
     form.append(row);
   }
@@ -463,7 +472,7 @@ function renderEntry() {
     event.preventDefault();
     if (busy) return;
     if ((image.value || video?.value) && !alt.value.trim() && !decorative?.checked) {
-      alt.required = true;
+      alt.setCustomValidity(post ? 'Describe the image for visitors using screen readers.' : 'Describe the image or video, or mark it decorative.');
       alt.reportValidity();
       return;
     }

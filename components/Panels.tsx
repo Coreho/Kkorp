@@ -219,21 +219,13 @@ export function ProjectsBody() {
         </h2>
         <div className="rest stack">
           <p className="blurb">{pages.projectsIntro}</p>
-          <div className="tags">
-            <span>Next.js</span>
-            <span>Supabase</span>
-            <span>Realtime chat</span>
-            <span>AI bots</span>
-          </div>
         </div>
         <div className="detail">
           {/* Until the published list arrives, say so rather than flash the bundled sample projects. */}
           <div className="proj" aria-busy={!ready}>
-            {ready && projects.map((project) => (
-              <ProjectCard key={project.id} {...project} />
-            ))}
-            {!ready && <p className="admin-note">Loading projects…</p>}
-            {ready && !projects.length && <p>New projects are on the way.</p>}
+            {!ready ? <p className="admin-note">Loading projects…</p>
+              : projects.length ? projects.map((project) => <ProjectCard key={project.id} {...project} />)
+                : <p>New projects are on the way.</p>}
           </div>
         </div>
         <Action label={pages.projectsAction ?? 'See projects'} />
