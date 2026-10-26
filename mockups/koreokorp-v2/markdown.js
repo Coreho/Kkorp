@@ -1,34 +1,21 @@
 /**
- * A small Markdown reader for blog entries.
+ * A small Markdown reader for blog entries, shared by the public entry page
+ * (components/Markdown.tsx) and the editor's preview (admin/admin.js), so an
+ * entry previews exactly as it will be published. Types are in markdown.d.ts.
  *
  * The client JavaScript budget (tests/app/tactile.spec.js) has no room for a
  * full Markdown library, and entries only need the everyday subset: paragraphs,
- * headings, emphasis, links, lists, quotes, code and rules. The output is a tree
- * that components/Markdown.tsx renders as React elements, so raw HTML in an
- * entry is shown as text and can never run. Links keep only http(s), mailto,
- * and same-site addresses.
+ * headings, emphasis, links, lists, quotes, code and rules. The output is a
+ * tree that each caller turns into elements without injecting HTML, so raw
+ * HTML in an entry is shown as text and can never run. Links keep only
+ * http(s), mailto, and same-site addresses.
  *
  * Single line breaks inside a paragraph stay line breaks, because entries
  * written before Markdown was supported were plain text that relied on them.
  */
 
-export type Inline =
-  | { type: 'text'; value: string }
-  | { type: 'code'; value: string }
-  | { type: 'strong' | 'em'; children: Inline[] }
-  | { type: 'link'; href: string; children: Inline[] }
-  | { type: 'break' };
-
-export type Block =
-  | { type: 'heading'; level: 2 | 3 | 4; children: Inline[] }
-  | { type: 'paragraph'; children: Inline[] }
-  | { type: 'code'; value: string }
-  | { type: 'quote'; children: Block[] }
-  | { type: 'list'; ordered: boolean; start: number; items: Inline[][] }
-  | { type: 'rule' };
-
 /** The address a link may point to, or null when it could be unsafe. */
-export function safeHref(raw: string): string | null {
+export function safeHref(raw) {
   const href = raw.trim();
   // Control characters and spaces can disguise a scheme from the checks below.
   if (!href || /[\u0000- \u007f]/.test(href)) return null;
@@ -47,12 +34,12 @@ const HEADING = /^ {0,3}(#{1,6})\s+(.*?)(?:\s+#+)?\s*$/;
 const RULE = /^ {0,3}([-*_])(?:\s*\1){2,}\s*$/;
 const QUOTE = /^ {0,3}>/;
 
-function startsBlock(line: string): boolean {
+function startsBlock(line) {
   return FENCE.test(line) || HEADING.test(line) || RULE.test(line) || QUOTE.test(line) || BULLET.test(line) || ORDERED.test(line);
 }
 
 /** Index of the closing marker, skipping escapes and longer runs of the marker character. */
-function findClose(source: string, from: number, marker: string): number {
+function findClose(source, from, marker) {
   for (let i = from; i <= source.length - marker.length; i += 1) {
     if (source.charAt(i) === '\\') {
       i += 1;
@@ -75,7 +62,7 @@ function findClose(source: string, from: number, marker: string): number {
 }
 
 /** Reads [text](address) starting at an opening bracket. */
-function readLink(source: string, open: number, lastClose: number): { text: string; href: string; end: number } | null {
+function readLink(source, open, lastClose) {
   // Bounded, so text full of unmatched brackets cannot make reading quadratic.
   if (lastClose < open) return null;
   const limit = Math.min(source.length, open + 2000);
@@ -111,15 +98,15 @@ function readLink(source: string, open: number, lastClose: number): { text: stri
   return null;
 }
 
-export function parseInline(source: string): Inline[] {
-  const out: Inline[] = [];
+export function parseInline(source) {
+  const out = [];
   let text = '';
   const flush = () => {
     if (text) out.push({ type: 'text', value: text });
     text = '';
   };
   // Markers with no closer left, so a long run of unmatched ones stays linear.
-  const unclosed = new Set<string>();
+  const unclosed = new Set();
   const lastClose = source.lastIndexOf(']');
   let i = 0;
   while (i < source.length) {
@@ -132,7 +119,7 @@ export function parseInline(source: string): Inline[] {
       out.push({ type: 'break' });
       i += 1;
     } else if (ch === '`') {
-      const run = /^`+/.exec(source.slice(i))![0];
+      const run = /^`+/.exec(source.slice(i))[0];
       const end = source.indexOf(run, i + run.length);
       if (end < 0) {
         text += run;
@@ -192,10 +179,10 @@ export function parseInline(source: string): Inline[] {
   return out;
 }
 
-export function parseMarkdown(source: string): Block[] {
+export function parseMarkdown(source) {
   const lines = source.replace(/\r\n?/g, '\n').split('\n');
-  const blocks: Block[] = [];
-  const at = (index: number) => lines[index] ?? '';
+  const blocks = [];
+  const at = (index) => lines[index] ?? '';
   let i = 0;
   while (i < lines.length) {
     const line = at(i);
@@ -205,9 +192,9 @@ export function parseMarkdown(source: string): Block[] {
     }
     const fence = FENCE.exec(line);
     if (fence) {
-      const body: string[] = [];
+      const body = [];
       i += 1;
-      while (i < lines.length && !at(i).trimStart().startsWith(fence[1] ?? '')) {
+      while (i < lines.length && !at(i).trimStart().startsWith(fence[1])) {
         body.push(at(i));
         i += 1;
       }
@@ -218,7 +205,7 @@ export function parseMarkdown(source: string): Block[] {
     const heading = HEADING.exec(line);
     if (heading) {
       // The entry title is the page's h1, so # and ## both open a section.
-      blocks.push({ type: 'heading', level: Math.min(4, Math.max(2, (heading[1] ?? '').length)) as 2 | 3 | 4, children: parseInline(heading[2] ?? '') });
+      blocks.push({ type: 'heading', level: Math.min(4, Math.max(2, heading[1].length)), children: parseInline(heading[2]) });
       i += 1;
       continue;
     }
@@ -228,7 +215,7 @@ export function parseMarkdown(source: string): Block[] {
       continue;
     }
     if (QUOTE.test(line)) {
-      const inner: string[] = [];
+      const inner = [];
       while (i < lines.length && QUOTE.test(at(i))) {
         inner.push(at(i).replace(/^ {0,3}> ?/, ''));
         i += 1;
@@ -240,12 +227,12 @@ export function parseMarkdown(source: string): Block[] {
     if (first) {
       const ordered = !BULLET.test(line);
       const pattern = ordered ? ORDERED : BULLET;
-      const items: string[] = [];
+      const items = [];
       while (i < lines.length) {
         const current = at(i);
         const item = pattern.exec(current);
         if (item) {
-          items.push(item[2] ?? '');
+          items.push(item[2]);
         } else if (!current.trim()) {
           // A blank line continues the list only when another item follows.
           let next = i + 1;
@@ -258,10 +245,10 @@ export function parseMarkdown(source: string): Block[] {
         }
         i += 1;
       }
-      blocks.push({ type: 'list', ordered, start: ordered ? Number(first[1] ?? 1) : 1, items: items.map(parseInline) });
+      blocks.push({ type: 'list', ordered, start: ordered ? Number(first[1]) : 1, items: items.map(parseInline) });
       continue;
     }
-    const paragraph: string[] = [];
+    const paragraph = [];
     while (i < lines.length && at(i).trim() && (paragraph.length === 0 || !startsBlock(at(i)))) {
       paragraph.push(at(i).trim());
       i += 1;

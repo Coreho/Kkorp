@@ -256,7 +256,8 @@ test.describe('content administration', () => {
     await expect(page.getByRole('status')).toContainText('Entry published');
     const published = async () => (await (await page.request.get('/api/content')).json()).posts;
     expect((await published()).map((post) => post.slug)).toEqual(['lasting-address']);
-    await expect(page.getByText('Web address: /blog/lasting-address')).toBeVisible();
+    await expect(page.getByLabel('Web address')).toHaveValue('lasting-address');
+    await expect(page.locator('#slug-help')).toHaveText('Stays the same when the title changes.');
 
     await page.getByLabel('Title', { exact: true }).fill('A renamed entry');
     await page.getByRole('button', { name: 'Save published entry' }).click();
@@ -283,6 +284,75 @@ test.describe('content administration', () => {
     const cleaned = structuredClone(snapshot);
     cleaned.posts = cleaned.posts.filter((post) => post.title !== 'Lasting address' && post.title !== 'A renamed entry');
     expect((await put(cleaned)).status()).toBe(200);
+  });
+
+  test('chooses an entry web address and previews its Markdown safely', async ({ page }) => {
+    const help = page.locator('#slug-help');
+    const stored = async () => (await (await page.request.get('/api/admin/content')).json());
+    await signIn(page);
+    await page.getByRole('button', { name: /^Blog entries/ }).click();
+    await page.getByRole('button', { name: 'Add blog entry' }).click();
+    const address = page.getByLabel('Web address');
+    await page.getByLabel('Title', { exact: true }).fill('Café notes, part 1!');
+    await expect(address).toHaveValue('cafe-notes-part-1');
+    await expect(help).toHaveText('Follows the title until you change it.');
+
+    // Typed text is tidied into an address, and from then on the title leaves it alone.
+    await address.fill('First Light');
+    await address.blur();
+    await expect(address).toHaveValue('first-light');
+    await page.getByLabel('Title', { exact: true }).fill('Café notes');
+    await expect(address).toHaveValue('first-light');
+
+    await page.getByLabel('Publication date').fill('2026-10-01');
+    await page.getByLabel('Short introduction', { exact: true }).fill('A standfirst.');
+    await page.getByLabel('Post text').fill('## Morning\n\nSome **bold** and *quiet* words, a [safe link](https://example.com) and a [bad one](javascript:window.__ran=1).\n\n<script>window.__ran = 1</script>\n\n- one\n- two');
+    await page.locator('.entry-preview summary').click();
+    const preview = page.locator('.preview-article');
+    await expect(preview.locator('.preview-title')).toHaveText('Café notes');
+    await expect(preview.locator('.preview-date')).toHaveText('Oct 1, 2026');
+    await expect(preview.locator('.preview-standfirst')).toHaveText('A standfirst.');
+    await expect(preview.getByRole('heading', { name: 'Morning', level: 2 })).toBeVisible();
+    await expect(preview.locator('strong')).toHaveText('bold');
+    await expect(preview.locator('em')).toHaveText('quiet');
+    await expect(preview.getByRole('link', { name: 'safe link' })).toHaveAttribute('href', 'https://example.com');
+    await expect(preview.getByRole('link', { name: 'bad one' })).toHaveCount(0);
+    await expect(preview).toContainText('<script>window.__ran = 1</script>');
+    await expect(preview.locator('script')).toHaveCount(0);
+    await expect(preview.locator('li')).toHaveText(['one', 'two']);
+    await capture(page, 'entry-preview');
+    // The open preview follows the form.
+    await page.getByLabel('Post text').fill('Changed **text**.');
+    await expect(preview.locator('strong')).toHaveText('text');
+    expect(await page.evaluate(() => window.__ran)).toBeUndefined();
+
+    await page.getByRole('button', { name: 'Publish entry', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('Entry published');
+    expect((await (await page.request.get('/api/content')).json()).posts.map((post) => [post.slug, post.date, post.excerpt])).toEqual([['first-light', '2026-10-01', 'A standfirst.']]);
+
+    // A second entry cannot take a used address; nothing is saved until it has its own.
+    await page.getByRole('button', { name: 'Add blog entry' }).click();
+    await page.getByLabel('Title', { exact: true }).fill('Another entry');
+    await page.getByLabel('Post text').fill('Body.');
+    const before = (await stored()).revision;
+    await address.fill('first-light');
+    await expect(help).toHaveText('Another blog entry already uses this web address.');
+    await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+    expect(await address.evaluate((input) => input.validity.valid)).toBe(false);
+    expect((await stored()).revision).toBe(before);
+    await address.fill('first-light-again');
+    await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('Draft saved');
+    expect((await stored()).posts.map((post) => post.slug)).toEqual(expect.arrayContaining(['first-light-again', 'first-light']));
+
+    // Deleting removes the entry from the site.
+    for (const name of ['Another entry', 'Café notes']) {
+      await page.getByRole('button', { name: new RegExp(name) }).click();
+      page.once('dialog', (dialog) => dialog.accept());
+      await page.getByRole('button', { name: 'Delete entry' }).click();
+      await expect(page.getByRole('status')).toContainText('Entry deleted');
+    }
+    expect((await (await page.request.get('/api/content')).json()).posts).toEqual([]);
   });
 
   test('rejects unauthorized writes, unsafe uploads, unsafe links, and stale saves', async ({ page, request }) => {

@@ -1,4 +1,5 @@
-import { pageFields } from '../content-model.js';
+import { pageFields, slugify, slugPattern } from '../content-model.js';
+import { parseMarkdown } from '../markdown.js';
 
 const $ = (selector) => document.querySelector(selector);
 let content;
@@ -61,6 +62,64 @@ function button(text, callback, className = '') {
   element.type = 'button';
   element.addEventListener('click', callback);
   return element;
+}
+// The address a title gives, with -2, -3 when another entry has it, as assignSlugs does on the server.
+function addressFor(title, taken) {
+  const base = slugify(title);
+  let slug = base;
+  for (let suffix = 2; taken.has(slug); suffix += 1) slug = `${base}-${suffix}`;
+  return slug;
+}
+function followsTitle(slug, title) {
+  const base = slugify(title);
+  return slug === base || (slug.startsWith(`${base}-`) && /^\d+$/.test(slug.slice(base.length + 1)));
+}
+// The same reader as the public entry page, built as DOM nodes so nothing in an entry runs.
+function inlineNodes(items) {
+  return items.map((item) => {
+    if (item.type === 'text') return document.createTextNode(item.value);
+    if (item.type === 'break') return node('br');
+    if (item.type === 'code') return node('code', item.value);
+    const element = node(item.type === 'link' ? 'a' : item.type);
+    if (item.type === 'link') {
+      element.href = item.href;
+      // A new tab, so following a link never leaves an unsaved entry.
+      element.target = '_blank';
+      element.rel = 'noopener noreferrer';
+    }
+    element.append(...inlineNodes(item.children));
+    return element;
+  });
+}
+function blockNode(block) {
+  if (block.type === 'code') {
+    const pre = node('pre');
+    pre.append(node('code', block.value));
+    return pre;
+  }
+  if (block.type === 'rule') return node('hr');
+  if (block.type === 'quote') {
+    const quote = node('blockquote');
+    quote.append(...block.children.map(blockNode));
+    return quote;
+  }
+  if (block.type === 'list') {
+    const list = node(block.ordered ? 'ol' : 'ul');
+    if (block.ordered && block.start !== 1) list.start = block.start;
+    for (const item of block.items) {
+      const entry = node('li');
+      entry.append(...inlineNodes(item));
+      list.append(entry);
+    }
+    return list;
+  }
+  const element = node(block.type === 'heading' ? `h${block.level}` : 'p');
+  element.append(...inlineNodes(block.children));
+  return element;
+}
+function postDate(date) {
+  const parsed = new Date(`${date}T12:00:00Z`);
+  return Number.isNaN(parsed.getTime()) ? '' : parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }
 function updateCounts() {
   $('#post-count').textContent = content.posts.length;
@@ -129,6 +188,55 @@ function renderList() {
     list.append(row);
   }
 }
+function addressField(form, item, title) {
+  const published = item?.status === 'published';
+  const taken = new Set(content.posts.filter((post) => post.id !== item?.id).map((post) => post.slug).filter(Boolean));
+  const fromTitle = () => (title.value.trim() ? addressFor(title.value, taken) : '');
+  // An unpublished entry's address follows its title until the owner types one; a published address stays put.
+  let following = !published && (!item?.slug || followsTitle(item.slug, item.title));
+  const input = field(form, 'slug', 'Web address', item?.slug || fromTitle(), 'text', true, 80);
+  input.spellcheck = false;
+  input.autocapitalize = 'off';
+  // Entries saved before addresses were stored get theirs from the title, as the public site does.
+  const original = input.value;
+  const row = node('div', undefined, 'slug-row');
+  input.replaceWith(row);
+  row.append(node('span', '/blog/', 'slug-prefix'), input);
+  const help = node('p', '', 'helper');
+  help.id = 'slug-help';
+  input.setAttribute('aria-describedby', help.id);
+  row.after(help);
+  const check = () => {
+    const value = input.value;
+    const problem = !value && following ? ''
+      : !slugPattern.test(value) ? 'Use lowercase letters, numbers, and single hyphens, such as my-first-entry.'
+        : taken.has(value) ? 'Another blog entry already uses this web address.' : '';
+    input.setCustomValidity(problem);
+    help.classList.toggle('error', Boolean(problem));
+    help.textContent = problem || (following ? 'Follows the title until you change it.'
+      : published && value !== original ? 'Changing a published address breaks links to the old one.'
+        : 'Stays the same when the title changes.');
+  };
+  title.addEventListener('input', () => {
+    if (following) input.value = fromTitle();
+    check();
+  });
+  input.addEventListener('input', () => {
+    following = false;
+    check();
+  });
+  input.addEventListener('change', () => {
+    // Typed text becomes an address: "My First Entry!" is saved as my-first-entry.
+    if (input.value.trim()) input.value = slugify(input.value);
+    else if (published) input.value = original;
+    else {
+      following = true;
+      input.value = fromTitle();
+    }
+    check();
+  });
+  check();
+}
 function renderEntry() {
   const item = content[section].find((entry) => entry.id === selected);
   if (!item && selected !== 'new') {
@@ -144,14 +252,14 @@ function renderEntry() {
   const heading = node('div', undefined, 'entry-heading');
   heading.append(node('h2', item ? 'Edit entry' : post ? 'New blog entry' : 'New project'), node('span', entry.status === 'published' ? 'Published' : 'Draft', 'entry-status'));
   form.append(heading);
-  field(form, 'title', 'Title', entry.title, 'text', true, 200);
+  const title = field(form, 'title', 'Title', entry.title, 'text', true, 200);
   if (post) {
+    addressField(form, item, title);
     field(form, 'date', 'Publication date', entry.date, 'date', true, 10);
     field(form, 'excerpt', 'Short introduction', entry.excerpt, 'textarea', false, 1000);
     const body = field(form, 'body', 'Post text', entry.body, 'textarea', true, 100000);
     body.className = 'body-input';
     form.append(node('p', 'Blank lines separate paragraphs. Markdown works for headings, **bold**, *italic*, links, lists, quotes, and code. The date labels your entry; publishing makes it live immediately.', 'helper'));
-    if (item?.slug && item.status === 'published') form.append(node('p', `Web address: /blog/${item.slug}`, 'helper'));
   } else {
     field(form, 'description', 'Project description', entry.description, 'textarea', true, 10000);
     field(form, 'url', 'Project link (optional)', entry.url, 'url', false, 2000);
@@ -200,12 +308,22 @@ function renderEntry() {
     finally { busy = false; imageField.value = ''; form.querySelectorAll('button').forEach((element) => { element.disabled = false; }); }
   });
   const details = node('details', undefined, 'entry-preview');
-  const previewText = node('div', undefined, 'preview-content');
-  details.append(node('summary', 'Preview text'), previewText);
-  details.addEventListener('toggle', () => {
+  const previewContent = node('div', undefined, post ? 'preview-article' : 'preview-content');
+  details.append(node('summary', 'Preview'), previewContent);
+  const renderPreview = () => {
     if (!details.open) return;
-    previewText.replaceChildren(node('h2', form.elements.title.value), node('p', post ? form.elements.body.value : form.elements.description.value));
-  });
+    const values = form.elements;
+    if (!post) {
+      previewContent.replaceChildren(node('h2', values.title.value), node('p', values.description.value));
+      return;
+    }
+    const parts = [node('h2', values.title.value || 'Untitled entry', 'preview-title')];
+    if (postDate(values.date.value)) parts.push(node('p', postDate(values.date.value), 'preview-date'));
+    if (values.excerpt.value.trim()) parts.push(node('p', values.excerpt.value, 'preview-standfirst'));
+    previewContent.replaceChildren(...parts, ...parseMarkdown(values.body.value).map(blockNode));
+  };
+  details.addEventListener('toggle', renderPreview);
+  form.addEventListener('input', renderPreview);
   form.append(details);
   const actions = node('div', undefined, 'actions');
   const draft = node('button', item?.status === 'published' ? 'Unpublish to draft' : 'Save draft');
@@ -232,8 +350,6 @@ function renderEntry() {
     const values = Object.fromEntries(new FormData(form));
     delete values['image-file'];
     const value = { ...values, id, status, image: currentImage };
-    // Once published, a post keeps its address; drafts take theirs from the latest title.
-    if (item?.slug && item.status === 'published') value.slug = item.slug;
     const index = next[section].findIndex((value) => value.id === id);
     if (index < 0) next[section].unshift(value);
     else next[section][index] = value;

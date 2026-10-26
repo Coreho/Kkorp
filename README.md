@@ -37,14 +37,15 @@ emails the owner when a check fails. It is scheduled every ten minutes, but
 GitHub runs it only about every two hours (see [monitoring](docs/monitoring.md)).
 
 **Blog entries.** Each published entry has its own page at `/blog/<slug>`,
-linked from the Blog slide; "All entries" returns to `/#blog`. The address
-comes from the title the first time an entry is saved and stays fixed once it
-is published, so renaming a published entry keeps its link. Drafts and unknown
+linked from the Blog slide; "All entries" returns to `/#blog`. The editor's
+Web address field follows the title until the owner types an address, and a
+published address stays fixed, so renaming a published entry keeps its link.
+The editor's preview uses the same Markdown reader as the public page. Drafts and unknown
 addresses show "Entry not found". Bodies are Markdown: paragraphs (single line
 breaks are kept), `##` headings, bold, italic, `code`, links, bulleted and
 numbered lists, quotes, fenced code and rules. Raw HTML is shown as text, and
 links keep only http(s), mailto and same-site addresses. The reader is
-`lib/markdown.ts` rather than a library, because the client JavaScript budget
+`mockups/koreokorp-v2/markdown.js` rather than a library, because the client JavaScript budget
 has no room for one; nested lists, tables and inline images are not supported.
 The budget test in `tests/app/tactile.spec.js` caps the home page at 620 KiB
 (every emitted chunk except those only entry pages load) and an entry page's

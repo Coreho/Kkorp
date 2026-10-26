@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
-import { parseMarkdown, type Block, type Inline } from '@/lib/markdown';
+import { parseMarkdown, type Block, type Inline } from '@/mockups/koreokorp-v2/markdown.js';
 
 /**
  * Renders an entry's Markdown as React elements. Nothing is injected as HTML,
- * so markup typed into an entry appears as text; see lib/markdown.ts.
+ * so markup typed into an entry appears as text; see mockups/koreokorp-v2/markdown.js.
  */
 function inline(nodes: Inline[]): ReactNode[] {
   return nodes.map((node, index) => {
